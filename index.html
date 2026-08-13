@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>사내 멀티 게임 허브 - Office Games Live</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        @font-face {
+            font-family: 'DungGeunMo';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+        }
+
+        :root {
+            --bg-surface: #FFFFFF;
+            --border-block: #000000;
+            --text-primary: #000000;
+            --text-secondary: #555555;
+            --shadow-block: 6px 6px 0px #000000;
+            --shadow-block-sm: 3px 3px 0px #000000;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DungGeunMo', sans-serif; }
+        body { background: var(--bg-surface); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
+
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; background: var(--bg-surface); border-bottom: 3px solid var(--border-block);
+        }
+        .brand { font-size: 1.3rem; font-weight: bold; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .brand-icon { width: 32px; height: 32px; border: 2px solid var(--border-block); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-block-sm); }
+
+        .container { max-width: 800px; margin: 40px auto; padding: 0 16px; flex: 1; width: 100%; }
+
+        .hub-card {
+            background: var(--bg-surface); border: 3px solid var(--border-block);
+            padding: 32px 24px; box-shadow: var(--shadow-block); text-align: center;
+        }
+
+        .game-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px;
+        }
+
+        .game-item {
+            border: 3px solid var(--border-block); padding: 28px 16px;
+            background: #FFFFFF; text-decoration: none; color: inherit;
+            box-shadow: var(--shadow-block-sm); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .game-item:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 6px 6px 0px var(--border-block);
+            background: #FAFAFA;
+        }
+
+        .game-icon { font-size: 3.5rem; margin-bottom: 12px; }
+        .game-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
+        .game-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; word-break: keep-all; }
+
+        @media (max-width: 600px) {
+            .game-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <a href="index.html" class="brand">
+            <div class="brand-icon">🎮</div>
+            <span>Office Games LIVE</span>
+        </a>
+    </header>
+
+    <main class="container">
+        <div class="hub-card">
+            <h1 style="font-size: 1.8rem; margin-bottom: 8px;">사내 멀티 미니게임</h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">원하시는 게임을 선택하여 입장하세요!</p>
+
+            <div class="game-grid">
+                <!-- 1. 빙고 게임 선택 -->
+                <a href="bingo.html" class="game-item">
+                    <div class="game-icon">🎯</div>
+                    <div class="game-title">실시간 사내 빙고</div>
+                    <div class="game-desc">자유 주제 단어로 동료들과 함께 즐기는 실시간 사내 빙고 게임</div>
+                </a>
+
+                <!-- 2. 루미큐브 선택 -->
+                <a href="rummikub.html" class="game-item">
+                    <div class="game-icon">🧩</div>
+                    <div class="game-title">레트로 루미큐브</div>
+                    <div class="game-desc">타일을 조합해 거치대를 가장 먼저 비우는 전략 루미큐브 게임</div>
+                </a>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
