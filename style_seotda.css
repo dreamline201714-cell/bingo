@@ -1,4 +1,4 @@
-/* style_seotda.css - Victory Magnet & Stealth Profit Added */
+/* style_seotda.css - Mobile Betting Group & Layout Fully Responsive Fixed */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
 
 @font-face {
@@ -92,7 +92,7 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 
 /* 🎴 섯다 판 및 중앙 POT */
 .seotda-table-board {
-    width: 100%; max-width: 500px; min-height: 260px; margin: 0 auto;
+    width: 100%; max-width: 500px; min-height: 240px; margin: 0 auto;
     background: #0f5132; border: 4px solid var(--border-block);
     box-shadow: var(--shadow-block); padding: 12px; position: relative;
     display: flex; flex-direction: column; justify-content: space-between;
@@ -106,7 +106,7 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 .pot-title { font-size: 0.75rem; color: #ffc107; font-weight: bold; letter-spacing: 1px; }
 .pot-amount { font-size: 1.3rem; font-weight: bold; color: #ffffff; }
 
-.other-players-grid { display: flex; justify-content: space-around; margin-top: 10px; gap: 8px; }
+.other-players-grid { display: flex; justify-content: space-around; margin-top: 10px; gap: 8px; flex-wrap: wrap; }
 .player-seat-card { background: rgba(255,255,255,0.9); border: 2px solid var(--border-block); padding: 6px 10px; text-align: center; min-width: 90px; }
 
 .quick-speech-bar {
@@ -134,7 +134,20 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 .hwatu-card:hover { transform: translateY(-6px); }
 .hwatu-card.card-front { background: #ffffff; color: #000; }
 
-/* 💸 배팅 및 팟 싹쓸이 칩 날아가는 애니메이션 */
+/* 💸 배팅 버튼 연출 및 모바일 하단 반응형 고정 */
+.betting-action-group { 
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; width: 100%;
+}
+.bet-btn { 
+    flex: 1; min-width: 60px; padding: 10px 4px; font-weight: bold; font-size: 0.85rem; 
+    border: 2px solid var(--border-block); cursor: pointer; box-shadow: var(--shadow-block-sm); text-align: center;
+}
+.bet-bing { background: #2196f3; color: #fff; }
+.bet-tadang { background: #ff9800; color: #fff; }
+.bet-half { background: #e91e63; color: #fff; }
+.bet-call { background: #4caf50; color: #fff; }
+.bet-die { background: #607d8b; color: #fff; }
+
 .flying-chip {
     position: fixed; width: 22px; height: 22px; border-radius: 50%;
     background: radial-gradient(circle, #ffd700, #ff8c00);
@@ -142,14 +155,6 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
     z-index: 9999; pointer-events: none;
     transition: all 0.65s cubic-bezier(0.25, 1, 0.5, 1);
 }
-
-.betting-action-group { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-.bet-btn { flex: 1; min-width: 70px; padding: 10px 4px; font-weight: bold; font-size: 0.85rem; border: 2px solid var(--border-block); cursor: pointer; box-shadow: var(--shadow-block-sm); }
-.bet-bing { background: #2196f3; color: #fff; }
-.bet-tadang { background: #ff9800; color: #fff; }
-.bet-half { background: #e91e63; color: #fff; }
-.bet-call { background: #4caf50; color: #fff; }
-.bet-die { background: #607d8b; color: #fff; }
 
 .sidebar-panel { background: var(--bg-surface); border: 2px solid var(--border-block); box-shadow: var(--shadow-block); display: flex; flex-direction: column; height: 580px; overflow: hidden; padding: 12px; gap: 10px; }
 .sidebar-players-fixed { display: flex; flex-direction: column; max-height: 180px; border: 2px solid var(--border-block); background: var(--bg-primary); padding: 8px; }
@@ -224,10 +229,23 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 .mobile-sidebar-close { display: none; }
 .excel-only-bar { display: none !important; }
 
-/* 📱 모바일 디바이스 오버라이드 */
+/* 📱 모바일 디바이스 최적화 오버라이드 */
 @media screen and (max-width: 768px) {
-    .container { padding: 8px 6px; }
-    .arena-main { grid-template-columns: 1fr; gap: 12px; }
+    .container { padding: 4px; }
+    .arena-main { grid-template-columns: 1fr; gap: 8px; }
+
+    /* 모바일 화투패 크기 조절 */
+    .hwatu-card { width: 54px; height: 84px; font-size: 0.85rem; }
+
+    /* 모바일 배팅 버튼 그룹 하단 고정 최적화 */
+    .betting-action-group {
+        position: sticky; bottom: 0; background: var(--bg-surface);
+        padding: 8px 4px; border-top: 2px solid var(--border-block);
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.15); z-index: 100;
+        margin-top: 8px; gap: 4px;
+    }
+
+    .bet-btn { padding: 12px 2px; font-size: 0.8rem; }
 
     .modal-box {
         width: 95vw !important; max-height: 85vh !important;
