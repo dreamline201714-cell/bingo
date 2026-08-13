@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v8">
+    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v10">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -135,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- 방장 전용 컨트롤 박스 -->
             <div id="host-controls" class="host-controls-box" style="display: none;">
                 <div style="text-align: right;">
                     <button class="start-game-btn" id="btn-host-start">게임 시작하기!</button>
@@ -152,10 +151,10 @@
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <button class="primary-btn" id="btn-toggle-ready" style="width: auto; padding: 8px 14px; margin: 0; font-size:0.9rem;">준비 완료</button>
                             </div>
-                            <div style="display: flex; gap: 4px;">
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                 <button class="secondary-btn" id="btn-sort-color">색상 정렬</button>
                                 <button class="secondary-btn" id="btn-sort-number">숫자 정렬</button>
-                                <button class="primary-btn" id="btn-submit-turn" style="margin:0; padding:8px 12px; font-size:0.85rem; width:auto; background:var(--border-block); color:var(--bg-surface);">턴 완료 / 드로우</button>
+                                <button class="primary-btn" id="btn-submit-turn" style="margin:0; padding:8px 12px; font-size:0.85rem; width:auto; background:var(--border-block); color:var(--bg-surface);">턴 완료 / 제출</button>
                             </div>
                         </div>
                     </div>
@@ -203,83 +202,41 @@
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
-                <h3>🧩 루미큐브 게임 규칙 &amp; 방법</h3>
+                <h3>🧩 루미큐브 고급 재조합 규칙</h3>
                 <button class="modal-close" id="help-modal-close">&times;</button>
             </div>
             
             <div class="modal-body-scroll help-modal-body">
                 <div class="help-section">
-                    <div class="help-section-title">📋 게임 진행 순서</div>
+                    <div class="help-section-title">📋 재조합 &amp; 조커 활용법</div>
                     <div class="help-step-list">
                         <div class="help-step">
-                            <div class="help-step-num">1</div>
+                            <div class="help-step-num">★</div>
                             <div class="help-step-text">
-                                <strong>타일 지급 및 세팅</strong><br>
-                                게임 시작 시 각 플레이어에게 14장의 타일이 랜덤 지급됩니다.
+                                <strong>조커(Joker) 회수 및 교체</strong><br>
+                                내 거치대에서 조커 자리에 들어갈 실물 타일을 터치한 뒤, 공유 테이블의 **`★` 조커 타일을 클릭하면 조커가 내 손(거치대)으로 쏙 빠져나옵니다!**
                             </div>
                         </div>
                         <div class="help-step">
-                            <div class="help-step-num">2</div>
+                            <div class="help-step-num">✂️</div>
                             <div class="help-step-text">
-                                <strong>최초 등록 (Initial Meld)</strong><br>
-                                첫 번째 타일을 테이블에 내놓을 때는 오직 내 거치대의 타일만으로 <strong>숫자의 합이 30점 이상</strong>이어야 합니다.<br>
-                                <span class="help-tip">💡 30점 이상 등록을 마치기 전까지는 남이 낸 타일을 가져다 쓸 수 없습니다.</span>
+                                <strong>세트 쪼개기 (Splitting)</strong><br>
+                                4장 이상의 긴 세트에서 중간 타일을 클릭하면 **해당 위치를 기준으로 두 개의 세트로 싹둑 쪼개어집니다.**
                             </div>
                         </div>
                         <div class="help-step">
-                            <div class="help-step-num">3</div>
+                            <div class="help-step-num">✅</div>
                             <div class="help-step-text">
-                                <strong>타일 내기 OR 타일 드로우</strong><br>
-                                내 턴에 유효한 세트(3장 이상)를 내거나, 낼 타일이 없다면 '턴 완료 / 드로우'를 눌러 타일 1장을 가져옵니다.<br>
-                                <span class="help-tip">⏱️ 제한 시간 내에 타일을 내지 못하면 자동으로 타일 1장을 드로우하고 턴이 넘어갑니다.</span>
-                            </div>
-                        </div>
-                        <div class="help-step">
-                            <div class="help-step-num">4</div>
-                            <div class="help-step-text">
-                                <strong>거치대 완전히 비우면 완승!</strong><br>
-                                내 거치대(Rack)에 있는 모든 타일을 가장 먼저 내놓은 사람이 최종 우승자가 됩니다!
+                                <strong>턴 완료 검증</strong><br>
+                                턴을 마칠 때 공유 테이블의 모든 묶음이 **3장 이상의 유효한 세트**여야만 턴 제출이 완료됩니다.
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="help-section">
-                    <div class="help-section-title">🧩 유효한 타일 세트 조합</div>
-                    <div class="help-mode-grid">
-                        <div class="help-mode-card winner">
-                            <div class="help-mode-icon">🔴🔵⬛🟡</div>
-                            <div class="help-mode-name">그룹 (Group)</div>
-                            <div class="help-mode-desc">
-                                <strong>같은 숫자</strong> + 서로 다른 3~4가지 색상의 타일 묶음.<br>
-                                예: 빨강 8 + 파랑 8 + 검정 8
-                            </div>
-                        </div>
-
-                        <div class="help-mode-card loser">
-                            <div class="help-mode-icon">1️⃣2️⃣3️⃣4️⃣</div>
-                            <div class="help-mode-name">런 (Run)</div>
-                            <div class="help-mode-desc">
-                                <strong>같은 색상</strong> + 연속된 숫자 3장 이상의 타일 묶음.<br>
-                                예: 파랑 4 + 파랑 5 + 파랑 6
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="help-section">
-                    <div class="help-section-title">✨ 알짜 팁</div>
-                    <ul class="help-tip-list">
-                        <li>★ <strong>조커(Joker) 타일</strong>은 어떤 숫자와 색상으로도 대체할 수 있는 만능 타일입니다!</li>
-                        <li>하단의 <strong>[색상 정렬]</strong> / <strong>[숫자 정렬]</strong> 버튼을 누르면 거치대의 타일이 깔끔하게 재정렬됩니다.</li>
-                        <li>모바일에서는 우측 하단 <strong>💬 대화 / 목록</strong> 버튼을 터치하여 슬라이딩 수직 바텀시트로 채팅을 즐길 수 있습니다.</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 대기실 리셋 선택 모달 -->
     <div class="modal-overlay" id="reset-option-modal">
         <div class="modal-box" style="text-align: center; max-width: 400px;">
             <h3 style="font-size: 1.2rem; margin-bottom: 10px;">대기실 리셋</h3>
@@ -311,6 +268,6 @@
         </div>
     </div>
 
-    <script src="app_rummikub.js?v=20260813_v8"></script>
+    <script src="app_rummikub.js?v=20260813_v11"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Final Fixed
+Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Bingo Click ID Match Fix
 """
 
 import asyncio
@@ -334,7 +334,51 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
         await broadcast_to_room(room_id, {'type': 'ROOM_UPDATED', 'state': None})
         return room_id
 
-    # ★ 게임 시작 시 루미큐브 덱 생성 및 14장 타일 지급 보장 ★
+    elif msg_type == 'UPDATE_BOARD':
+        room = ROOMS.get(current_room_id)
+        if room and ws in room['players']:
+            board = data.get('board', [])
+            room['players'][ws]['board'] = board
+            await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
+    # ★ 빙고 마킹 백엔드 완벽 보완 ★
+    elif msg_type == 'MARK_CELL':
+        room = ROOMS.get(current_room_id)
+        if room and room['game_type'] == 'BINGO' and room['status'] == 'PLAYING':
+            current_ws = room['turn_order'][room['current_turn_index']]
+            if ws == current_ws:
+                cell_index = data.get('cell_index')
+                player = room['players'][ws]
+                board = player.get('board', [])
+                if 0 <= cell_index < len(board):
+                    target_word = board[cell_index].strip()
+                    if target_word:
+                        size = room['config']['size']
+                        target_lines = room['config'].get('target_lines', size)
+                        winners = []
+
+                        # 모든 플레이어의 보드에서 동일 단어 자동 지움(마킹)
+                        for p_ws, p in room['players'].items():
+                            p_board = p.get('board', [])
+                            for idx, w in enumerate(p_board):
+                                if w.strip() == target_word:
+                                    p['marked'].add(idx)
+                            p['score'] = calculate_bingo_lines(p_board, p['marked'], size)
+                            if p['score'] >= target_lines:
+                                winners.append(p['nickname'])
+
+                        room['chat_logs'].append({'system': True, 'text': f"🎯 [{player['nickname']}]님이 '{target_word}'을(를) 선택했습니다!"})
+
+                        if winners:
+                            winner_names = ", ".join(winners)
+                            room['chat_logs'].append({'system': True, 'text': f"🏆 축하합니다! [{winner_names}]님이 목표 ({target_lines}줄)를 달성하여 승리했습니다!"})
+                            room['status'] = 'WAITING'
+                        else:
+                            room['current_turn_index'] = (room['current_turn_index'] + 1) % len(room['turn_order'])
+                            room['turn_start_time'] = time.time()
+
+                        await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
     elif msg_type == 'START_GAME':
         room = ROOMS.get(current_room_id)
         if not room or not room['players'][ws]['is_host']: return current_room_id

@@ -1,5 +1,5 @@
 /**
- * Office Seotda Live Client Application Logic - Pot Sweep & Stealth Profit Effect
+ * Office Seotda Live Client Application Logic - Mobile Betting Visibility Fixed
  */
 
 (function () {
@@ -12,7 +12,6 @@
     let previousTurnPlayerId = null;
     let previousStatus = null;
 
-    // 배팅 시 칩 투척 연출
     function animateChipToss(fromBtnEl) {
         const potBox = document.getElementById('pot-center-box');
         if (!fromBtnEl || !potBox) return;
@@ -41,7 +40,6 @@
         }
     }
 
-    // ★ 1. 칩 싹쓸이 빨아들이기 애니메이션 (POT ➔ 우승자 위치) ★
     function animatePotSweepToWinner(winnerPlayerId) {
         const potBox = document.getElementById('pot-center-box');
         if (!potBox) return;
@@ -337,7 +335,6 @@
                 if (dealerControls) dealerControls.style.display = 'none';
             }
 
-            // ★ 쇼다운 전환 시 '칩 싹쓸이' 애니메이션 및 '스텔스 수익' 수식줄 표현 연출 ★
             if (previousStatus !== 'SHOWDOWN') {
                 const winnerId = roomState.dealer_player_id;
                 animatePotSweepToWinner(winnerId);
@@ -360,7 +357,10 @@
             if (dealerControls) dealerControls.style.display = 'none';
             if (readyBtn) readyBtn.style.display = 'none';
             
-            if (betGroup) betGroup.style.display = myPlayer?.is_folded ? 'none' : 'flex';
+            // 모바일 반응형 하단 바 포함 배팅 버튼 가시성 강제 유지
+            if (betGroup) {
+                betGroup.style.display = myPlayer?.is_folded ? 'none' : 'flex';
+            }
 
             const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
             const turnPlayer = roomState.players.find(p => p.player_id === roomState.current_turn_player_id);

@@ -1,5 +1,5 @@
 /**
- * Office Bingo Live Client Application Logic - Turn Player & Timer Fix
+ * Office Bingo Live Client Application Logic - Victory/GameOver Modal Restored
  */
 
 (function () {
@@ -19,6 +19,14 @@
 
     let timerInterval = null;
     let timerSecondsLeft = 15;
+    let gameOverTimerInterval = null;
+    let gameOverSecondsLeft = 15;
+
+    function fireConfetti() {
+        if (typeof confetti === 'function') {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+    }
 
     function initStealthMode() {
         const btnStealthToggle = document.getElementById('btn-stealth-toggle');
@@ -216,6 +224,68 @@
         document.getElementById('draw-modal').classList.add('active');
     }
 
+    // ★ 게임 종료 결과 모달 팝업 표시 ★
+    function showGameOverModal(winners, isWinnerMode) {
+        const gameOverModal = document.getElementById('game-over-modal');
+        const iconEl = document.getElementById('game-over-icon');
+        const titleEl = document.getElementById('game-over-title');
+        const msgEl = document.getElementById('game-over-message');
+        const timerNumEl = document.getElementById('game-over-timer-num');
+        const closeBtn = document.getElementById('game-over-close-btn');
+
+        if (!gameOverModal) return;
+
+        const winnerNames = winners.map(w => w.nickname).join(', ');
+        const isMeWinner = winners.some(w => w.player_id === myPlayerId);
+
+        if (isWinnerMode) {
+            if (isMeWinner) {
+                if (iconEl) iconEl.innerText = '🏆';
+                if (titleEl) titleEl.innerText = '최종 우승!';
+                if (msgEl) msgEl.innerText = `축하합니다! 당신이 승리 목표를 달성하여 우승하셨습니다!`;
+                fireConfetti();
+            } else {
+                if (iconEl) iconEl.innerText = '👑';
+                if (titleEl) titleEl.innerText = '게임 종료';
+                if (msgEl) msgEl.innerText = `[${winnerNames}] 님이 승리 목표를 달성하여 우승했습니다.`;
+            }
+        } else {
+            // 패자 결정전
+            if (isMeWinner) {
+                if (iconEl) iconEl.innerText = '💣';
+                if (titleEl) titleEl.innerText = '벌칙 당첨!';
+                if (msgEl) msgEl.innerText = `아쉽게도 마지막까지 탈출하지 못하여 벌칙 당첨자가 되셨습니다!`;
+            } else {
+                if (iconEl) iconEl.innerText = '🎉';
+                if (titleEl) titleEl.innerText = '탈출 성공!';
+                if (msgEl) msgEl.innerText = `축하합니다! 무사히 탈출하셨습니다. (벌칙 당첨자: ${winnerNames})`;
+                fireConfetti();
+            }
+        }
+
+        gameOverModal.classList.add('active');
+
+        clearInterval(gameOverTimerInterval);
+        gameOverSecondsLeft = 15;
+        if (timerNumEl) timerNumEl.innerText = gameOverSecondsLeft;
+
+        gameOverTimerInterval = setInterval(() => {
+            gameOverSecondsLeft--;
+            if (timerNumEl) timerNumEl.innerText = gameOverSecondsLeft;
+            if (gameOverSecondsLeft <= 0) {
+                clearInterval(gameOverTimerInterval);
+                gameOverModal.classList.remove('active');
+            }
+        }, 1000);
+
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                clearInterval(gameOverTimerInterval);
+                gameOverModal.classList.remove('active');
+            };
+        }
+    }
+
     function handleServerMessage(msg) {
         switch (msg.type) {
             case 'ROOM_JOINED':
@@ -237,7 +307,18 @@
                 }, 2500);
                 break;
             case 'ROOM_UPDATED':
+                const oldStatus = roomState ? roomState.status : 'WAITING';
                 roomState = msg.state;
+
+                // ★ 게임이 PLAYING -> WAITING으로 바뀌었을 때 승자 결과 모달 띄우기 ★
+                if (oldStatus === 'PLAYING' && roomState.status === 'WAITING') {
+                    const targetLines = roomState.config.target_lines || roomState.config.size;
+                    const winners = roomState.players.filter(p => (p.score || 0) >= targetLines);
+                    if (winners.length > 0) {
+                        showGameOverModal(winners, roomState.config.game_mode !== 'LOSER');
+                    }
+                }
+
                 updateArenaUI();
                 if (spectatingPlayerId) renderSpectateBoard(spectatingPlayerId);
                 break;
@@ -263,7 +344,6 @@
         return emptyCount;
     }
 
-    // ★ 15초 카운트다운 타이머 바 및 숫자 연동 ★
     function startTurnTimer(secondsLeft, totalLimit) {
         clearInterval(timerInterval);
         timerSecondsLeft = secondsLeft;
@@ -323,17 +403,16 @@
             if (footerPlayingControls) footerPlayingControls.style.display = 'flex';
             if (turnBanner) turnBanner.style.display = 'flex';
 
-            // ★ 현재 턴 플레이어 닉네임 실시간 업데이트 (더미 '홍길동님' 제거) ★
             const turnPlayer = roomState.players.find(p => p.player_id === roomState.current_turn_player_id);
+            const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
+
             if (turnPlayerBadge) {
-                const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
-                turnPlayerBadge.innerText = isMyTurn ? `내 턴입니다! (${myPlayer?.nickname})` : `${turnPlayer?.nickname || '참여자'}님 턴`;
+                turnPlayerBadge.innerText = isMyTurn ? `내 턴입니다!` : `${turnPlayer?.nickname || '참여자'}님 턴`;
             }
 
-            // ★ 실시간 타이머 가동 ★
             startTurnTimer(roomState.turn_time_remaining || roomState.turn_time_limit || 15, roomState.turn_time_limit || 15);
 
-            if (roomState.current_turn_player_id === myPlayerId && previousTurnPlayerId !== myPlayerId) {
+            if (isMyTurn && previousTurnPlayerId !== myPlayerId) {
                 showToast("🎯 당신의 턴입니다! 빙고 단어를 선택하세요!");
             }
             previousTurnPlayerId = roomState.current_turn_player_id;
@@ -359,19 +438,19 @@
                 if (hostControls) hostControls.style.display = 'none';
             }
 
-            renderBingoBoard(myPlayer.board, myPlayer.marked, config.size, status, myPlayer.is_ready);
+            renderBingoBoard(myPlayer.board, myPlayer.marked, config.size, status);
             renderTopicWordChips(myPlayer.board);
         }
         renderPlayersRoster(status);
         renderChatLogs();
     }
 
-    function renderBingoBoard(board, markedIndices, size, status, isReady) {
+    function renderBingoBoard(board, markedIndices, size, status) {
         const bingoBoardGrid = document.getElementById('bingo-board-grid');
         if (!bingoBoardGrid) return;
         bingoBoardGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
         bingoBoardGrid.innerHTML = '';
-        const markedSet = new Set(markedIndices);
+        const markedSet = new Set(markedIndices || []);
 
         board.forEach((text, index) => {
             const cell = document.createElement('div');
@@ -390,9 +469,21 @@
                         sendMessage({ type: 'UPDATE_BOARD', room_id: currentRoomId, board: newBoard });
                     }
                 } else if (status === 'PLAYING') {
-                    if (myPlayerId === roomState.current_turn_player_id && !isMarked && hasText) {
-                        sendMessage({ type: 'MARK_CELL', room_id: currentRoomId, cell_index: index, player_id: myPlayerId });
+                    const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
+                    if (!isMyTurn) {
+                        showToast("내 턴일 때만 빙고 단어를 선택할 수 있습니다!");
+                        return;
                     }
+                    if (isMarked) {
+                        showToast("이미 선택된 단어입니다!");
+                        return;
+                    }
+                    if (!hasText) {
+                        showToast("단어가 적힌 칸을 선택해 주세요!");
+                        return;
+                    }
+
+                    sendMessage({ type: 'MARK_CELL', room_id: currentRoomId, cell_index: index });
                 }
             };
             bingoBoardGrid.appendChild(cell);
@@ -711,18 +802,18 @@
             btnCopyLink.onclick = () => {
                 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
                 if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
-                else prompt('링크를 복사하세요:', shareUrl);
+                else prompt('아래 링크를 복사하세요:', shareUrl);
             };
         }
 
         if (btnShowQr) {
             btnShowQr.onclick = () => {
                 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-                const qrCodeContainer = document.getElementById('qrcode');
-                if (qrCodeContainer) {
-                    qrCodeContainer.innerHTML = '';
-                    if (typeof QRCode === 'function') new QRCode(qrCodeContainer, { text: shareUrl, width: 180, height: 180 });
-                    else qrCodeContainer.innerText = shareUrl;
+                const qrContainer = document.getElementById('qrcode');
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    if (typeof QRCode === 'function') new QRCode(qrContainer, { text: shareUrl, width: 180, height: 180 });
+                    else qrContainer.innerText = shareUrl;
                 }
                 if (qrModal) qrModal.classList.add('active');
             };
