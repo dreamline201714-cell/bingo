@@ -49,6 +49,20 @@
         }
     }
 
+    // ★ 모바일 바텀시트 제어 스크립트 ★
+    function initMobileSidebar() {
+        const mobileFabBtn = document.getElementById('mobile-fab-btn');
+        const mobileSidebar = document.getElementById('mobile-sidebar');
+        const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
+
+        if (mobileFabBtn && mobileSidebar) {
+            mobileFabBtn.onclick = () => mobileSidebar.classList.add('active');
+        }
+        if (mobileSidebarClose && mobileSidebar) {
+            mobileSidebarClose.onclick = () => mobileSidebar.classList.remove('active');
+        }
+    }
+
     function initNavControls() {
         const btnHelp = document.getElementById('btn-help');
         const helpModal = document.getElementById('help-modal');
@@ -301,10 +315,12 @@
     function renderPlayers() {
         const panel = document.getElementById('panel-players');
         const countSpan = document.getElementById('player-count');
+        const mobilePlayerCount = document.getElementById('mobile-player-count');
         if (!panel || !roomState) return;
 
         panel.innerHTML = '';
         if (countSpan) countSpan.innerText = roomState.players.length;
+        if (mobilePlayerCount) mobilePlayerCount.innerText = roomState.players.length;
 
         roomState.players.forEach(p => {
             const card = document.createElement('div');
@@ -522,6 +538,7 @@
 
     // 실행 초기화
     initStealthMode();
+    initMobileSidebar(); // ★ 모바일 바텀시트 초기화 ★
     initNavControls();
     connectNetwork();
 })();

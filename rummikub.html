@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v4">
+    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v5">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -14,19 +14,24 @@
     <canvas id="confetti-canvas"></canvas>
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- 모바일 전용 대화 플로팅 버튼 (FAB) -->
+    <button class="mobile-fab" id="mobile-fab-btn">
+        💬 대화 / 목록 (<span id="mobile-player-count">0</span>명)
+    </button>
+
     <header class="navbar">
         <a href="index.html" class="brand" id="nav-logo">
             <div class="brand-icon" id="brand-icon-el">🧩</div>
             <span id="brand-title-el">Office Rummikub <small style="font-size:0.65rem; color:var(--accent); vertical-align:super;">LIVE</small></span>
         </a>
         <div class="nav-controls">
-            <div id="stealth-opacity-box" style="display:none; align-items:center; gap:6px; background:rgba(255,255,255,0.2); padding:2px 8px; border-radius:4px;">
-                <span style="font-size:11px; color:#fff;">투명도:</span>
-                <input type="range" id="stealth-opacity-range" min="30" max="100" value="100" style="width:70px; cursor:pointer;">
+            <div id="stealth-opacity-box" style="display:none; align-items:center; gap:4px; background:rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px;">
+                <span style="font-size:10px; color:#fff;">투명도</span>
+                <input type="range" id="stealth-opacity-range" min="30" max="100" value="100" style="width:50px; cursor:pointer;">
             </div>
 
-            <button class="icon-btn" id="btn-stealth-toggle" style="width:auto; padding:0 8px; font-weight:bold; gap:4px;" title="사무실 스텔스 모드 전환">
-                📊 <span style="font-size:0.8rem;">스텔스</span>
+            <button class="icon-btn" id="btn-stealth-toggle" style="width:auto; padding:0 6px; font-weight:bold; gap:2px;" title="스텔스 모드">
+                📊 <span style="font-size:0.75rem;">스텔스</span>
             </button>
 
             <div class="status-badge">
@@ -39,7 +44,6 @@
         </div>
     </header>
 
-    <!-- 스텔스 전용 수식 입력줄 (기본 숨김) -->
     <div class="excel-formula-bar excel-only-bar">
         <div class="excel-cell-name">C3</div>
         <div class="excel-fx">fx</div>
@@ -50,9 +54,9 @@
         <!-- 1. 로비 섹션 -->
         <section id="lobby-section" class="lobby-grid">
             <div class="glass-card">
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 8px;">레트로 실시간 루미큐브</h1>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">타일을 조합하여 가장 먼저 내 거치대를 비워보세요!</p>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 6px;">레트로 실시간 루미큐브</h1>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">타일을 조합하여 가장 먼저 내 거치대를 비워보세요!</p>
                 </div>
 
                 <div class="tab-selector">
@@ -107,7 +111,7 @@
                         <span class="topic-tag">RUMMIKUB</span>
                         <span class="room-state-badge waiting" id="room-state-badge">대기 중</span>
                         <h2 id="display-topic-title">레트로 실시간 루미큐브</h2>
-                        <span style="font-size: 0.85rem; color: var(--text-secondary);" id="display-grid-info">턴 제한 시간: 60초</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);" id="display-grid-info">턴 제한 시간: 60초</span>
                     </div>
 
                     <div class="room-share-box">
@@ -140,26 +144,26 @@
                     <div class="rummikub-table-board" id="table-sets-container"></div>
 
                     <div class="board-footer" id="board-footer">
-                        <div id="footer-waiting-controls" style="display: flex; gap: 8px; flex-wrap: wrap; width: 100%; align-items: center; justify-content: space-between;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <button class="primary-btn" id="btn-toggle-ready" style="width: auto; padding: 10px 20px; margin: 0;">준비 완료</button>
+                        <div id="footer-waiting-controls" style="display: flex; gap: 6px; flex-wrap: wrap; width: 100%; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button class="primary-btn" id="btn-toggle-ready" style="width: auto; padding: 8px 14px; margin: 0; font-size:0.9rem;">준비 완료</button>
                             </div>
-                            <div style="display: flex; gap: 6px;">
-                                <button class="secondary-btn" id="btn-sort-color">색상별 정렬</button>
-                                <button class="secondary-btn" id="btn-sort-number">숫자별 정렬</button>
-                                <button class="primary-btn" id="btn-submit-turn" style="margin:0; padding:10px 16px; font-size:0.95rem; width:auto; background:var(--border-block); color:var(--bg-surface);">턴 완료 / 드로우</button>
+                            <div style="display: flex; gap: 4px;">
+                                <button class="secondary-btn" id="btn-sort-color">색상 정렬</button>
+                                <button class="secondary-btn" id="btn-sort-number">숫자 정렬</button>
+                                <button class="primary-btn" id="btn-submit-turn" style="margin:0; padding:8px 12px; font-size:0.85rem; width:auto; background:var(--border-block); color:var(--bg-surface);">턴 완료 / 드로우</button>
                             </div>
                         </div>
                     </div>
 
                     <div class="topic-words-panel">
-                        <h4>내 거치대 (Rack) - 타일을 선택하여 공유 테이블로 내세요</h4>
+                        <h4 style="font-size:0.85rem; margin-bottom:8px;">내 거치대 (Rack) - 타일을 선택하여 공유 테이블로 내세요</h4>
                         <div id="my-rack-container" class="my-rack-container"></div>
                     </div>
                 </div>
 
                 <div class="sidebar-panel glass-card" id="mobile-sidebar">
-                    <button class="mobile-sidebar-close" id="mobile-sidebar-close">창 닫기</button>
+                    <button class="mobile-sidebar-close" id="mobile-sidebar-close">▼ 창 닫기</button>
                     
                     <div class="sidebar-players-fixed">
                         <div class="sidebar-section-title">
@@ -191,84 +195,43 @@
         </section>
     </main>
 
-    <!-- ★ 풍성한 루미큐브 전용 게임 규칙 & 방법 모달 ★ -->
+    <!-- 모달 오버레이들 -->
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
                 <h3>🧩 루미큐브 게임 규칙 &amp; 방법</h3>
                 <button class="modal-close" id="help-modal-close">&times;</button>
             </div>
-            
             <div class="modal-body-scroll help-modal-body">
-                <!-- 1. 게임 진행 순서 -->
                 <div class="help-section">
                     <div class="help-section-title">📋 진행 순서</div>
                     <div class="help-step-list">
                         <div class="help-step">
                             <div class="help-step-num">1</div>
-                            <div class="help-step-text">
-                                <strong>타일 세팅</strong><br>
-                                각 플레이어에게는 14장의 타일이 랜덤 지급됩니다.
-                            </div>
+                            <div class="help-step-text"><strong>타일 세팅</strong><br>각 플레이어에게 14장의 타일이 랜덤 지급됩니다.</div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">2</div>
-                            <div class="help-step-text">
-                                <strong>최초 등록 (Initial Meld)</strong><br>
-                                첫 타일을 낼 때는 오직 내 거치대 타일만으로 <strong>숫자 합이 30점 이상</strong>인 유효 세트를 만들어 제출해야 합니다.
-                            </div>
+                            <div class="help-step-text"><strong>최초 등록</strong><br>첫 타일을 낼 때는 오직 내 타일만으로 <strong>숫합 30점 이상</strong>이어야 합니다.</div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">3</div>
-                            <div class="help-step-text">
-                                <strong>타일 조합 내기 OR 타일 드로우</strong><br>
-                                내 턴에 유효한 세트를 테이블에 내거나, 낼 타일이 없다면 '턴 완료 / 드로우'를 눌러 타일 1장을 가져옵니다.
-                            </div>
+                            <div class="help-step-text"><strong>타일 제출 OR 드로우</strong><br>유효 세트를 내거나, 낼 타일이 없으면 타일 1장을 가져옵니다.</div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">4</div>
-                            <div class="help-step-text">
-                                <strong>거치대 완전히 비우면 승리!</strong><br>
-                                내 거치대(Rack)의 모든 타일을 가장 먼저 내놓는 사람이 최종 우승자가 됩니다!
-                            </div>
+                            <div class="help-step-text"><strong>거치대를 먼저 비우면 승리!</strong><br>모든 타일을 가장 먼저 비운 사람이 최종 우승합니다!</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- 2. 유효한 타일 세트 모드 -->
-                <div class="help-section">
-                    <div class="help-section-title">🧩 유효한 타일 세트 조합</div>
-                    <div class="help-mode-grid">
-                        <div class="help-mode-card winner">
-                            <div class="help-mode-icon">🔴🔵⬛🟡</div>
-                            <div class="help-mode-name">그룹 (Group)</div>
-                            <div class="help-mode-desc"><strong>같은 숫자</strong> + 서로 다른 3~4가지 색상의 타일 조합.</div>
-                        </div>
-                        <div class="help-mode-card loser">
-                            <div class="help-mode-icon">1️⃣2️⃣3️⃣4️⃣</div>
-                            <div class="help-mode-name">런 (Run)</div>
-                            <div class="help-mode-desc"><strong>같은 색상</strong> + 연속된 숫자 3장 이상의 타일 조합.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. 핵심 팁 -->
-                <div class="help-section">
-                    <div class="help-section-title">💡 조커(Joker) &amp; 정렬 팁</div>
-                    <ul class="help-tip-list">
-                        <li>★ <strong>조커 타일</strong>은 어떤 숫자와 색상으로도 대체될 수 있습니다.</li>
-                        <li>하단의 <strong>'색상별 정렬'</strong> / <strong>'숫자별 정렬'</strong> 버튼을 활용해 거치대를 쉽게 정리하세요!</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 모달 오버레이들 -->
     <div class="modal-overlay" id="draw-modal">
         <div class="modal-box" style="text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
-            <h3 style="font-size: 1.4rem; font-weight: 800; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
+            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
             <div class="draw-result-list" id="draw-result-list"></div>
         </div>
     </div>
@@ -285,6 +248,6 @@
         </div>
     </div>
 
-    <script src="app_rummikub.js?v=20260813_v4"></script>
+    <script src="app_rummikub.js?v=20260813_v5"></script>
 </body>
 </html>

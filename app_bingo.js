@@ -52,7 +52,24 @@
         }
     }
 
-    // ★ 테마 전환 & 네비게이션 버튼 동작 보완 ★
+    // ★ 모바일 바텀시트 슬라이딩 제어 스크립트 ★
+    function initMobileSidebar() {
+        const mobileFabBtn = document.getElementById('mobile-fab-btn');
+        const mobileSidebar = document.getElementById('mobile-sidebar');
+        const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
+
+        if (mobileFabBtn && mobileSidebar) {
+            mobileFabBtn.onclick = () => {
+                mobileSidebar.classList.add('active');
+            };
+        }
+        if (mobileSidebarClose && mobileSidebar) {
+            mobileSidebarClose.onclick = () => {
+                mobileSidebar.classList.remove('active');
+            };
+        }
+    }
+
     function initNavControls() {
         const btnHelp = document.getElementById('btn-help');
         const helpModal = document.getElementById('help-modal');
@@ -78,7 +95,6 @@
         if (themeToggleBtn) {
             themeToggleBtn.onclick = () => {
                 currentTheme = (currentTheme === 'light') ? 'dark' : 'light';
-                // HTML root 태그에 다크 테마 적용
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 document.body.setAttribute('data-theme', currentTheme);
                 themeToggleBtn.innerText = (currentTheme === 'dark') ? '☀️' : '🌙';
@@ -232,6 +248,7 @@
     const topicWordsChips = document.getElementById('topic-words-chips');
     const panelPlayers = document.getElementById('panel-players');
     const playerCountSpan = document.getElementById('player-count');
+    const mobilePlayerCount = document.getElementById('mobile-player-count');
     const chatMessagesBox = document.getElementById('chat-messages');
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
@@ -427,6 +444,7 @@
         panelPlayers.innerHTML = '';
         const playersList = roomState ? roomState.players : [];
         if (playerCountSpan) playerCountSpan.innerText = playersList.length;
+        if (mobilePlayerCount) mobilePlayerCount.innerText = playersList.length;
 
         playersList.forEach(p => {
             const card = document.createElement('div');
@@ -621,6 +639,7 @@
 
     // 초기화 실행
     initStealthMode();
+    initMobileSidebar(); // ★ 모바일 바텀시트 슬라이더 초기화 ★
     initNavControls();
     initPresetChips();
     updateTargetLinesOptions(selectedSize, createTargetLinesSelect);
