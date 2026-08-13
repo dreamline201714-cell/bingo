@@ -3,94 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>사내 멀티 게임 허브 - Office Games Live</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
-        @font-face {
-            font-family: 'DungGeunMo';
-            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
-        }
-
-        :root {
-            --bg-surface: #FFFFFF;
-            --border-block: #000000;
-            --text-primary: #000000;
-            --text-secondary: #555555;
-            --shadow-block: 6px 6px 0px #000000;
-            --shadow-block-sm: 3px 3px 0px #000000;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'DungGeunMo', sans-serif; }
-        body { background: var(--bg-surface); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; }
-
-        .navbar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 20px; background: var(--bg-surface); border-bottom: 3px solid var(--border-block);
-        }
-        .brand { font-size: 1.3rem; font-weight: bold; color: var(--text-primary); text-decoration: none; display: flex; align-items: center; gap: 8px; }
-        .brand-icon { width: 32px; height: 32px; border: 2px solid var(--border-block); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-block-sm); }
-
-        .container { max-width: 800px; margin: 40px auto; padding: 0 16px; flex: 1; width: 100%; }
-
-        .hub-card {
-            background: var(--bg-surface); border: 3px solid var(--border-block);
-            padding: 32px 24px; box-shadow: var(--shadow-block); text-align: center;
-        }
-
-        .game-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px;
-        }
-
-        .game-item {
-            border: 3px solid var(--border-block); padding: 28px 16px;
-            background: #FFFFFF; text-decoration: none; color: inherit;
-            box-shadow: var(--shadow-block-sm); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .game-item:hover {
-            transform: translate(-3px, -3px);
-            box-shadow: 6px 6px 0px var(--border-block);
-            background: #FAFAFA;
-        }
-
-        .game-icon { font-size: 3.5rem; margin-bottom: 12px; }
-        .game-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
-        .game-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; word-break: keep-all; }
-
-        @media (max-width: 600px) {
-            .game-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <title>Office Live Games Hub v1.0.xlsx - Microsoft Excel</title>
+    
+    <link rel="stylesheet" href="style_bingo.css?v=20260813_v8">
 </head>
 <body>
     <header class="navbar">
         <a href="index.html" class="brand">
             <div class="brand-icon">🎮</div>
-            <span>Office Games LIVE</span>
+            <span>Office Live Games <small style="font-size:0.65rem; color:var(--accent); vertical-align:super;">HUB</small></span>
         </a>
     </header>
 
-    <main class="container">
-        <div class="hub-card">
-            <h1 style="font-size: 1.8rem; margin-bottom: 8px;">사내 멀티 미니게임</h1>
-            <p style="color: var(--text-secondary); font-size: 0.95rem;">원하시는 게임을 선택하여 입장하세요!</p>
+    <main class="container" style="max-width: 800px; margin-top: 20px;">
+        <div class="glass-card" style="text-align: center; margin-bottom: 24px;">
+            <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 10px;">사내 실시간 멀티 미니게임</h1>
+            <p style="color: var(--text-secondary); font-size: 1rem;">동료들과 웹 브라우저에서 바로 실시간으로 즐기는 레트로 미니게임 모음집입니다.</p>
+        </div>
 
-            <div class="game-grid">
-                <!-- 1. 빙고 게임 선택 -->
-                <a href="bingo.html" class="game-item">
-                    <div class="game-icon">🎯</div>
-                    <div class="game-title">실시간 사내 빙고</div>
-                    <div class="game-desc">자유 주제 단어로 동료들과 함께 즐기는 실시간 사내 빙고 게임</div>
-                </a>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+            <!-- 1. 빙고 카드 -->
+            <a href="bingo.html" style="text-decoration: none; color: inherit;">
+                <div class="glass-card" style="height: 100%; transition: transform 0.15s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="font-size: 3rem; margin-bottom: 12px; text-align: center;">🎯</div>
+                    <h2 style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">사내 실시간 빙고</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; text-align: center;">
+                        3x3 ~ 5x5 자유 주제 빙고! 추천 프리셋과 스텔스 엑셀 모드를 지원합니다.
+                    </p>
+                </div>
+            </a>
 
-                <!-- 2. 루미큐브 선택 -->
-                <a href="rummikub.html" class="game-item">
-                    <div class="game-icon">🧩</div>
-                    <div class="game-title">레트로 루미큐브</div>
-                    <div class="game-desc">타일을 조합해 거치대를 가장 먼저 비우는 전략 루미큐브 게임</div>
-                </a>
-            </div>
+            <!-- 2. 루미큐브 카드 -->
+            <a href="rummikub.html" style="text-decoration: none; color: inherit;">
+                <div class="glass-card" style="height: 100%; transition: transform 0.15s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="font-size: 3rem; margin-bottom: 12px; text-align: center;">🧩</div>
+                    <h2 style="font-size: 1.3rem; margin-bottom: 8px; text-align: center;">레트로 실시간 루미큐브</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; text-align: center;">
+                        타일 조합 및 수싸움! 15초~90초 턴 제한과 공유 테이블을 제공합니다.
+                    </p>
+                </div>
+            </a>
+
+            <!-- 3. 섯다 카드 (신규 추가) -->
+            <a href="seotda.html" style="text-decoration: none; color: inherit;">
+                <div class="glass-card" style="height: 100%; transition: transform 0.15s; border-color: var(--accent);" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="font-size: 3rem; margin-bottom: 12px; text-align: center;">🃏</div>
+                    <h2 style="font-size: 1.3rem; margin-bottom: 8px; text-align: center; color: var(--accent);">레트로 실시간 섯다</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; text-align: center;">
+                        칩 배팅 투척 연출과 퀵 말풍선 심리전! 20장 화투 족보 싸움과 스텔스 모드를 제공합니다.
+                    </p>
+                </div>
+            </a>
         </div>
     </main>
 </body>
