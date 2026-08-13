@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Bingo Click ID Match Fix
+Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Seotda All-in & Showdown Fix
 """
 
 import asyncio
@@ -278,7 +278,7 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
             size = int(data.get('size', 5))
             ROOMS[room_id] = {
                 'game_type': 'BINGO', 'status': 'WAITING', 'turn_time_limit': TURN_DURATION_SECONDS, 'title': title,
-                'config': {'size': size, 'target_lines': int(data.get('target_lines', size)), 'topic': data.get('topic', '자유 주제').strip() or '자유 주제', 'word_pool': data.get('word_pool', [])},
+                'config': {'size': size, 'target_lines': int(data.get('target_lines', size)), 'topic': data.get('topic', '자유 주제').strip() or '자유 주제', 'game_mode': data.get('game_mode', 'WINNER'), 'word_pool': data.get('word_pool', [])},
                 'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': False, 'color': assigned_color, 'board': generate_player_board(data.get('word_pool', []), size), 'marked': set(), 'score': 0}},
                 'turn_order': [], 'current_turn_index': 0, 'chat_logs': []
             }
@@ -341,7 +341,22 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
             room['players'][ws]['board'] = board
             await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
-    # ★ 빙고 마킹 백엔드 완벽 보완 ★
+    elif msg_type == 'UPDATE_CONFIG':
+        room = ROOMS.get(current_room_id)
+        if room and room['game_type'] == 'BINGO' and ws in room['players'] and room['players'][ws]['is_host']:
+            size = int(data.get('size', room['config']['size']))
+            topic = str(data.get('topic', room['config']['topic'])).strip()
+            target_lines = int(data.get('target_lines', room['config'].get('target_lines', size)))
+            word_pool = data.get('word_pool', room['config'].get('word_pool', []))
+
+            room['config']['size'] = size
+            room['config']['topic'] = topic
+            room['config']['target_lines'] = target_lines
+            room['config']['word_pool'] = word_pool
+
+            room['chat_logs'].append({'system': True, 'text': f"⚙️ 방장에 의해 빙고 설정이 변경되었습니다. ({size}x{size}, 주제: {topic})"})
+            await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
     elif msg_type == 'MARK_CELL':
         room = ROOMS.get(current_room_id)
         if room and room['game_type'] == 'BINGO' and room['status'] == 'PLAYING':
@@ -357,7 +372,6 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                         target_lines = room['config'].get('target_lines', size)
                         winners = []
 
-                        # 모든 플레이어의 보드에서 동일 단어 자동 지움(마킹)
                         for p_ws, p in room['players'].items():
                             p_board = p.get('board', [])
                             for idx, w in enumerate(p_board):
@@ -381,7 +395,18 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
 
     elif msg_type == 'START_GAME':
         room = ROOMS.get(current_room_id)
-        if not room or not room['players'][ws]['is_host']: return current_room_id
+        if not room: return current_room_id
+
+        current_player = room['players'].get(ws)
+        if not current_player:
+            for p_ws, p in room['players'].items():
+                if p['id'] == current_player_id:
+                    current_player = p
+                    ws = p_ws
+                    break
+
+        if not current_player or not current_player.get('is_host'):
+            return current_room_id
 
         room['status'] = 'PLAYING'
         player_sockets = list(room['players'].keys())
@@ -442,6 +467,7 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                 room['turn_start_time'] = time.time()
                 await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
+    # ★ 섯다 배팅 판정 완전 보완 (올인 및 쇼다운 종료 처리) ★
     elif msg_type == 'SEOTDA_BET':
         room = ROOMS.get(current_room_id)
         if room and room['game_type'] == 'SEOTDA' and room['status'] == 'PLAYING':
@@ -480,11 +506,14 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                     room['pot'] += bet_add
                     
                     action_korean = {'CALL': '콜', 'BING': '삥', 'TADANG': '따당', 'HALF': '하프'}.get(action, action)
-                    room['chat_logs'].append({'system': True, 'text': f"💸 [{player['nickname']}]님이 [{action_korean}] ({bet_add}칩 추가배팅)!"})
+                    is_allin = (player['chips'] == 0)
+                    allin_str = " (올인!!)" if is_allin else ""
+                    room['chat_logs'].append({'system': True, 'text': f"💸 [{player['nickname']}]님이 [{action_korean}]{allin_str} ({bet_add}칩 추가배팅)!"})
 
                 room['betting_turns'] = room.get('betting_turns', 0) + 1
                 active_ws = [p_ws for p_ws, p in room['players'].items() if not p['is_folded']]
                 
+                # Case 1: 1명 제외 모두 다이한 경우
                 if len(active_ws) == 1:
                     winner_ws = active_ws[0]
                     winner = room['players'][winner_ws]
@@ -493,10 +522,18 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                     room['chat_logs'].append({'system': True, 'text': f"🎉 모두 기권하여 [{winner['nickname']}]님이 {room['pot']} 칩을 획득했습니다!"})
                     room['status'] = 'SHOWDOWN'
                 else:
+                    # ★ 쇼다운 판정 보완 ★
+                    # 생존자 중 배팅금이 같은지 / 올인(칩 0개) 상태인지 확인
                     highest_bet = max(room['players'][aw]['current_bet'] for aw in active_ws)
-                    all_bets_equal = all(room['players'][aw]['current_bet'] == highest_bet for aw in active_ws)
+                    all_bets_settled = all(
+                        (room['players'][aw]['current_bet'] == highest_bet or room['players'][aw]['chips'] == 0)
+                        for aw in active_ws
+                    )
                     
-                    if all_bets_equal and room['betting_turns'] >= len(active_ws):
+                    # 배팅 판돈에 가담할 수 있는 칩 있는 플레이어가 1명 이하이거나 배팅 한 바퀴가 끝난 경우
+                    can_bet_players = [aw for aw in active_ws if room['players'][aw]['chips'] > 0]
+
+                    if all_bets_settled and (len(can_bet_players) <= 1 or room['betting_turns'] >= len(active_ws)):
                         active_players = [room['players'][aw] for aw in active_ws]
                         active_players.sort(key=lambda x: x['jokbo_score'], reverse=True)
                         winner = active_players[0]
@@ -507,9 +544,15 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                         room['chat_logs'].append({'system': True, 'text': f"🏆 쪼기 결과! [{winner['nickname']}]님이 '{winner['jokbo_name']}'(으)로 {room['pot']} 칩 획득!"})
                         room['status'] = 'SHOWDOWN'
                     else:
+                        # 다음 배팅 턴 플레이어 검색 (올인하지 않고 생존한 플레이어)
                         next_idx = (room['current_turn_index'] + 1) % len(room['turn_order'])
-                        while room['players'][room['turn_order'][next_idx]]['is_folded']:
+                        for _ in range(len(room['turn_order'])):
+                            candidate_ws = room['turn_order'][next_idx]
+                            candidate_p = room['players'][candidate_ws]
+                            if not candidate_p['is_folded'] and candidate_p['chips'] > 0:
+                                break
                             next_idx = (next_idx + 1) % len(room['turn_order'])
+
                         room['current_turn_index'] = next_idx
                         room['turn_start_time'] = time.time()
 
@@ -519,12 +562,29 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
         room = ROOMS.get(current_room_id)
         if room and ws in room['players'] and room['players'][ws]['is_host']:
             room['status'] = 'WAITING'
-            if room['game_type'] == 'RUMMIKUB':
+            keep_board = data.get('keep_board', False)
+
+            if room['game_type'] == 'BINGO':
+                for p in room['players'].values():
+                    p['marked'] = set()
+                    p['score'] = 0
+                    p['is_ready'] = False
+                    if not keep_board:
+                        p['board'] = generate_player_board(room['config'].get('word_pool', []), room['config']['size'])
+
+            elif room['game_type'] == 'RUMMIKUB':
                 room['deck'] = []
                 room['table_sets'] = []
                 for p in room['players'].values():
                     p['rack'] = []
                     p['is_ready'] = False
+
+            elif room['game_type'] == 'SEOTDA':
+                room['pot'] = 0
+                for p in room['players'].values():
+                    p['hand'] = []
+                    p['is_ready'] = False
+
             room['chat_logs'].append({'system': True, 'text': "🔄 방장에 의해 대기실 상태로 리셋되었습니다."})
             await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 

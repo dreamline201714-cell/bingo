@@ -1,5 +1,5 @@
 /**
- * Office Seotda Live Client Application Logic - Mobile Betting Visibility Fixed
+ * Office Seotda Live Client Application Logic - Showdown Big Cards Fix
  */
 
 (function () {
@@ -44,13 +44,9 @@
         const potBox = document.getElementById('pot-center-box');
         if (!potBox) return;
 
-        let targetEl = null;
-        if (winnerPlayerId === myPlayerId) {
-            targetEl = document.querySelector('.my-seotda-hand-panel');
-        } else {
-            const seats = document.querySelectorAll('.player-seat-card');
-            targetEl = seats[0] || potBox;
-        }
+        let targetEl = (winnerPlayerId === myPlayerId)
+            ? document.querySelector('.my-seotda-hand-panel')
+            : (document.querySelectorAll('.player-seat-card')[0] || potBox);
 
         if (!targetEl) return;
 
@@ -150,6 +146,7 @@
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 document.body.setAttribute('data-theme', currentTheme);
                 themeToggleBtn.innerText = (currentTheme === 'dark') ? '☀️' : '🌙';
+                showToast(currentTheme === 'dark' ? '다크 모드로 변경되었습니다.' : '라이트 모드로 변경되었습니다.');
             };
         }
     }
@@ -205,7 +202,8 @@
                 listContainer.appendChild(card);
             });
         }
-        document.getElementById('draw-modal').classList.add('active');
+        const drawModal = document.getElementById('draw-modal');
+        if (drawModal) drawModal.classList.add('active');
     }
 
     function showToast(message) {
@@ -239,7 +237,7 @@
             checkUrlQueryParams();
         };
         socket.onmessage = (e) => {
-            try { handleServerMessage(JSON.parse(e.data)); } catch (err) {}
+            try { handleServerMessage(JSON.parse(e.data)); } catch (err) { console.error(err); }
         };
         socket.onclose = () => {
             const statusEl = document.getElementById('status-text');
@@ -311,14 +309,14 @@
                 }
 
                 if (myPlayer.is_host) {
-                    document.getElementById('host-controls').style.display = 'block';
+                    if (hostControls) hostControls.style.display = 'block';
                     if (hostBtn) {
                         const allReady = roomState.players.every(p => p.is_ready);
                         hostBtn.disabled = !allReady;
                         hostBtn.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
                     }
                 } else {
-                    document.getElementById('host-controls').style.display = 'none';
+                    if (hostControls) hostControls.style.display = 'none';
                 }
             }
         } 
@@ -357,7 +355,6 @@
             if (dealerControls) dealerControls.style.display = 'none';
             if (readyBtn) readyBtn.style.display = 'none';
             
-            // 모바일 반응형 하단 바 포함 배팅 버튼 가시성 강제 유지
             if (betGroup) {
                 betGroup.style.display = myPlayer?.is_folded ? 'none' : 'flex';
             }
@@ -408,6 +405,7 @@
         });
     }
 
+    // ★ [핵심 보완] SHOWDOWN 결과 공개 시 초록판 위에 상대방 화투패 2장 큼직하게 연출 ★
     function renderOtherPlayers() {
         const container = document.getElementById('other-players-grid');
         if (!container || !roomState) return;
@@ -419,14 +417,43 @@
             div.className = 'player-seat-card';
             
             let statusText = p.is_folded ? '😭 다이' : '배팅 중';
+            let cardsHtml = '';
+
             if (roomState.status === 'SHOWDOWN' && !p.is_folded) {
-                statusText = `<span style="color:var(--accent); font-weight:bold;">${p.jokbo_name}</span>`;
+                statusText = `<span style="color:#ffc107; font-weight:bold;">${p.jokbo_name}</span>`;
+                const hand = p.hand || [];
+                if (hand.length >= 2) {
+                    cardsHtml = `
+                        <div class="table-hwatu-container">
+                            <div class="table-hwatu-card">
+                                <span>${hand[0].month}월</span>
+                                <span style="font-size:0.65rem; color:${hand[0].is_kwang ? '#aa0000':'#666'}">${hand[0].is_kwang ? '광' : '피'}</span>
+                            </div>
+                            <div class="table-hwatu-card">
+                                <span>${hand[1].month}월</span>
+                                <span style="font-size:0.65rem; color:${hand[1].is_kwang ? '#aa0000':'#666'}">${hand[1].is_kwang ? '광' : '피'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (roomState.status === 'PLAYING' && !p.is_folded) {
+                cardsHtml = `
+                    <div class="table-hwatu-container">
+                        <div class="table-hwatu-card card-back"></div>
+                        <div class="table-hwatu-card card-back"></div>
+                    </div>
+                `;
             }
 
+            const isWinner = (roomState.status === 'SHOWDOWN' && p.player_id === roomState.dealer_player_id);
+
             div.innerHTML = `
-                <div style="font-weight:bold; font-size:0.8rem;">${escapeHtml(p.nickname)}</div>
-                <div style="font-size:0.75rem; color:#aa0000;">${(p.chips || 0).toLocaleString()} 칩</div>
-                <div style="font-size:0.7rem; color:#666; margin-top:2px;">${statusText}</div>
+                <div style="font-weight:bold; font-size:0.85rem; color:${isWinner ? '#ffc107' : '#fff'};">
+                    ${isWinner ? '👑 ' : ''}${escapeHtml(p.nickname)}
+                </div>
+                <div style="font-size:0.75rem; color:#ff8a80;">${(p.chips || 0).toLocaleString()} 칩</div>
+                ${cardsHtml}
+                <div style="font-size:0.75rem; margin-top:4px;">${statusText}</div>
             `;
             container.appendChild(div);
         });
@@ -485,102 +512,105 @@
 
     function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
-    const btnToggleReady = document.getElementById('btn-toggle-ready');
-    if (btnToggleReady) {
-        btnToggleReady.onclick = () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'TOGGLE_READY' }));
-            }
-        };
-    }
-
-    document.querySelectorAll('.bet-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const action = e.target.getAttribute('data-action');
-            if (action !== 'DIE') animateChipToss(e.target);
-            socket.send(JSON.stringify({ type: 'SEOTDA_BET', action: action }));
-        });
-    });
-
-    document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const msg = e.target.getAttribute('data-msg');
-            if (msg && socket) socket.send(JSON.stringify({ type: 'CHAT_MESSAGE', message: msg, quick_voice: true }));
-        });
-    });
-
-    const createTabBtn = document.getElementById('tab-btn-create');
-    const joinTabBtn = document.getElementById('tab-btn-join');
-    const createForm = document.getElementById('create-room-form');
-    const joinForm = document.getElementById('join-room-form');
-
-    if (createTabBtn && joinTabBtn) {
-        createTabBtn.addEventListener('click', () => {
-            createTabBtn.classList.add('active'); joinTabBtn.classList.remove('active');
-            if (createForm) createForm.style.display = 'block';
-            if (joinForm) joinForm.style.display = 'none';
-        });
-        joinTabBtn.addEventListener('click', () => {
-            joinTabBtn.classList.add('active'); createTabBtn.classList.remove('active');
-            if (joinForm) joinForm.style.display = 'block';
-            if (createForm) createForm.style.display = 'none';
-        });
-    }
-
-    const hostStartBtn = document.getElementById('btn-host-start');
-    if (hostStartBtn) {
-        hostStartBtn.onclick = () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'START_GAME' }));
-            }
-        };
-    }
-
-    const dealerStartBtn = document.getElementById('btn-dealer-start');
-    if (dealerStartBtn) {
-        dealerStartBtn.onclick = () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'START_ROUND' }));
-            }
-        };
-    }
-
-    document.getElementById('create-room-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const customTitle = document.getElementById('create-title').value.trim() || '레트로 실시간 섯다';
-        const startChips = parseInt(document.getElementById('create-start-chips').value) || 10000;
-        const baseAnte = parseInt(document.getElementById('create-base-ante').value) || 100;
-        
-        socket.send(JSON.stringify({
-            type: 'CREATE_ROOM', game_type: 'SEOTDA',
-            title: customTitle,
-            nickname: document.getElementById('create-nickname').value,
-            start_chips: startChips,
-            base_ante: baseAnte
-        }));
-    });
-
-    document.getElementById('join-room-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        socket.send(JSON.stringify({
-            type: 'JOIN_ROOM', nickname: document.getElementById('join-nickname').value,
-            room_id: document.getElementById('join-room-code').value
-        }));
-    });
-
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() && socket) {
-            socket.send(JSON.stringify({ type: 'CHAT_MESSAGE', message: input.value.trim() }));
-            input.value = '';
+    function initActionEvents() {
+        const btnToggleReady = document.getElementById('btn-toggle-ready');
+        if (btnToggleReady) {
+            btnToggleReady.onclick = () => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'TOGGLE_READY', room_id: currentRoomId }));
+                }
+            };
         }
-    });
 
-    // 실행 초기화
+        document.querySelectorAll('.bet-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.getAttribute('data-action');
+                if (action !== 'DIE') animateChipToss(e.target);
+                if (socket) socket.send(JSON.stringify({ type: 'SEOTDA_BET', room_id: currentRoomId, action: action }));
+            });
+        });
+
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const msg = e.target.getAttribute('data-msg');
+                if (msg && socket) socket.send(JSON.stringify({ type: 'CHAT_MESSAGE', room_id: currentRoomId, message: msg, quick_voice: true }));
+            });
+        });
+
+        const createTabBtn = document.getElementById('tab-btn-create');
+        const joinTabBtn = document.getElementById('tab-btn-join');
+        const createForm = document.getElementById('create-room-form');
+        const joinForm = document.getElementById('join-room-form');
+
+        if (createTabBtn && joinTabBtn) {
+            createTabBtn.addEventListener('click', () => {
+                createTabBtn.classList.add('active'); joinTabBtn.classList.remove('active');
+                if (createForm) createForm.style.display = 'block';
+                if (joinForm) joinForm.style.display = 'none';
+            });
+            joinTabBtn.addEventListener('click', () => {
+                joinTabBtn.classList.add('active'); createTabBtn.classList.remove('active');
+                if (joinForm) joinForm.style.display = 'block';
+                if (createForm) createForm.style.display = 'none';
+            });
+        }
+
+        const hostStartBtn = document.getElementById('btn-host-start');
+        if (hostStartBtn) {
+            hostStartBtn.onclick = () => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'START_GAME', room_id: currentRoomId }));
+                }
+            };
+        }
+
+        const dealerStartBtn = document.getElementById('btn-dealer-start');
+        if (dealerStartBtn) {
+            dealerStartBtn.onclick = () => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({ type: 'START_ROUND', room_id: currentRoomId }));
+                }
+            };
+        }
+
+        document.getElementById('create-room-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const customTitle = document.getElementById('create-title').value.trim() || '레트로 실시간 섯다';
+            const startChips = parseInt(document.getElementById('create-start-chips').value) || 10000;
+            const baseAnte = parseInt(document.getElementById('create-base-ante').value) || 100;
+            
+            socket.send(JSON.stringify({
+                type: 'CREATE_ROOM', game_type: 'SEOTDA',
+                title: customTitle,
+                nickname: document.getElementById('create-nickname').value,
+                start_chips: startChips,
+                base_ante: baseAnte
+            }));
+        });
+
+        document.getElementById('join-room-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            socket.send(JSON.stringify({
+                type: 'JOIN_ROOM', nickname: document.getElementById('join-nickname').value,
+                room_id: document.getElementById('join-room-code').value
+            }));
+        });
+
+        document.getElementById('chat-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            if (input.value.trim() && socket) {
+                socket.send(JSON.stringify({ type: 'CHAT_MESSAGE', room_id: currentRoomId, message: input.value.trim() }));
+                input.value = '';
+            }
+        });
+    }
+
+    // 초기화 실행
     initStealthMode();
     initMobileSidebar();
     initNavControls();
-    initShareControls();
+    initShareControls(); // 링크 복사 및 QR 코드 연결
+    initActionEvents();
     connectNetwork();
 })();

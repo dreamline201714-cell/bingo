@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v10">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="common.css?v=20260813_v3">
+    <link rel="stylesheet" href="style_rummikub.css?v=20260813_v12">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-    <canvas id="confetti-canvas"></canvas>
     <div id="toast-container" class="toast-container"></div>
 
     <button class="mobile-fab" id="mobile-fab-btn">
@@ -106,7 +105,7 @@
             </div>
         </section>
 
-        <!-- 2. 아레나 메인 게임 섹션 -->
+        <!-- 2. 게임 섹션 -->
         <section id="arena-section" style="display: none;">
             <div class="arena-header">
                 <div class="topic-banner">
@@ -178,8 +177,7 @@
 
                     <div class="sidebar-tabbed-area">
                         <div class="sidebar-tabs">
-                            <button class="sidebar-tab-btn active" id="stab-chat">대화</button>
-                            <button class="sidebar-tab-btn" id="stab-calls">시스템 알림</button>
+                            <button class="sidebar-tab-btn active" style="width:100%;">실시간 대화</button>
                         </div>
 
                         <div class="sidebar-content">
@@ -190,7 +188,6 @@
                                     <button type="submit" class="chat-send-btn">전송</button>
                                 </form>
                             </div>
-                            <div id="panel-calls" style="display: none;" class="call-list"></div>
                         </div>
                     </div>
                 </div>
@@ -198,45 +195,67 @@
         </section>
     </main>
 
-    <!-- 모달 오버레이들 -->
+    <!-- ★ 풍성하게 구성된 루미큐브 규칙 모달 ★ -->
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
-                <h3>🧩 루미큐브 고급 재조합 규칙</h3>
+                <h3>🧩 루미큐브 핵심 규칙 &amp; 조작 가이드</h3>
                 <button class="modal-close" id="help-modal-close">&times;</button>
             </div>
             
             <div class="modal-body-scroll help-modal-body">
                 <div class="help-section">
-                    <div class="help-section-title">📋 재조합 &amp; 조커 활용법</div>
+                    <div class="help-section-title">📋 유효한 세트 규칙 (3장 이상)</div>
+                    <div class="help-step-list">
+                        <div class="help-step">
+                            <div class="help-step-num">1</div>
+                            <div class="help-step-text">
+                                <strong>그룹 (Group)</strong><br>
+                                <strong>같은 숫자</strong>이면서 <strong>서로 다른 색상</strong> 3장 또는 4장의 모음 (예: 빨강7, 파랑7, 검정7)
+                            </div>
+                        </div>
+                        <div class="help-step">
+                            <div class="help-step-num">2</div>
+                            <div class="help-step-text">
+                                <strong>연속 (Run)</strong><br>
+                                <strong>같은 색상</strong>이면서 <strong>연속된 숫자</strong> 3장 이상의 모음 (예: 파랑3, 파랑4, 파랑5)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">🕹️ 자유로운 조합 (Manipulation)</div>
                     <div class="help-step-list">
                         <div class="help-step">
                             <div class="help-step-num">★</div>
                             <div class="help-step-text">
-                                <strong>조커(Joker) 회수 및 교체</strong><br>
-                                내 거치대에서 조커 자리에 들어갈 실물 타일을 터치한 뒤, 공유 테이블의 **`★` 조커 타일을 클릭하면 조커가 내 손(거치대)으로 쏙 빠져나옵니다!**
-                            </div>
-                        </div>
-                        <div class="help-step">
-                            <div class="help-step-num">✂️</div>
-                            <div class="help-step-text">
-                                <strong>세트 쪼개기 (Splitting)</strong><br>
-                                4장 이상의 긴 세트에서 중간 타일을 클릭하면 **해당 위치를 기준으로 두 개의 세트로 싹둑 쪼개어집니다.**
+                                <strong>공유 테이블 타일 분해 &amp; 이동</strong><br>
+                                내 턴에는 테이블에 나와있는 모든 타일을 1장 단위로 선택해서 내 패와 자유롭게 떼어내고, 붙이고, 새로 묶을 수 있습니다!
                             </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">✅</div>
                             <div class="help-step-text">
                                 <strong>턴 완료 검증</strong><br>
-                                턴을 마칠 때 공유 테이블의 모든 묶음이 **3장 이상의 유효한 세트**여야만 턴 제출이 완료됩니다.
+                                조합을 마친 후 <strong>[턴 완료 / 제출]</strong>을 누르면, 테이블의 모든 묶음이 유효한 세트인지 검증하여 다음 사람에게 넘깁니다.
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">💡 기타 편의 기능</div>
+                    <ul class="help-tip-list">
+                        <li><strong>색상/숫자 정렬:</strong> 내 거치대의 정렬 방식을 바꾸면 게임이 끝날 때까지 턴마다 자동으로 정렬이 유지됩니다.</li>
+                        <li><strong>자동 오름차순 배치:</strong> 타일을 묶음에 내놓으면 숫자에 맞게 위치가 자동 정렬됩니다.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 대기실 리셋 모달 -->
     <div class="modal-overlay" id="reset-option-modal">
         <div class="modal-box" style="text-align: center; max-width: 400px;">
             <h3 style="font-size: 1.2rem; margin-bottom: 10px;">대기실 리셋</h3>
@@ -248,6 +267,7 @@
         </div>
     </div>
 
+    <!-- 제비뽑기 모달 -->
     <div class="modal-overlay" id="draw-modal">
         <div class="modal-box" style="text-align: center;">
             <div style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
@@ -256,18 +276,19 @@
         </div>
     </div>
 
+    <!-- QR코드 모달 -->
     <div class="modal-overlay" id="qr-modal">
         <div class="modal-box">
             <div class="modal-header">
                 <h3>초대 QR 코드</h3>
                 <button class="modal-close" id="qr-modal-close">&times;</button>
             </div>
-            <div class="modal-body-scroll">
-                <div class="qr-box"><div id="qrcode"></div></div>
+            <div class="modal-body-scroll" style="text-align: center; padding: 10px;">
+                <div id="qrcode" style="display: flex; justify-content: center; margin: 0 auto;"></div>
             </div>
         </div>
     </div>
 
-    <script src="app_rummikub.js?v=20260813_v11"></script>
+    <script src="app_rummikub.js?v=20260813_v15"></script>
 </body>
 </html>

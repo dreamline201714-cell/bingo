@@ -1,7 +1,6 @@
 /**
- * Office Rummikub Live Client Application Logic - Rack Matching & UI State Fix
+ * Office Rummikub Live Client Application Logic - Help Modal Fix
  */
-
 (function () {
     let socket = null;
     let currentRoomId = null;
@@ -9,14 +8,12 @@
     let roomState = null;
     let previousTurnPlayerId = null;
 
-    let selectedTiles = []; // 내 거치대 선택 타일 ID들
+    let selectedTiles = []; 
     let localRack = [];
     let localTableSets = [];
-    let originalTurnRack = [];
-    let originalTurnTableSets = [];
-    
-    let selectedTableTile = null;
-    let selectedTimeLimit = 60;
+    let currentSortMode = 'none'; 
+    let selectedTimeLimit = 60; 
+
     let timerInterval = null;
     let timerSecondsLeft = 60;
     let soundEnabled = true;
@@ -34,7 +31,6 @@
                 e.preventDefault();
                 document.body.classList.toggle('excel-stealth-mode');
                 const isStealth = document.body.classList.contains('excel-stealth-mode');
-
                 if (stealthOpacityBox) stealthOpacityBox.style.display = isStealth ? 'flex' : 'none';
 
                 if (isStealth) {
@@ -61,14 +57,11 @@
         const mobileSidebar = document.getElementById('mobile-sidebar');
         const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
 
-        if (mobileFabBtn && mobileSidebar) {
-            mobileFabBtn.onclick = () => mobileSidebar.classList.add('active');
-        }
-        if (mobileSidebarClose && mobileSidebar) {
-            mobileSidebarClose.onclick = () => mobileSidebar.classList.remove('active');
-        }
+        if (mobileFabBtn && mobileSidebar) mobileFabBtn.onclick = () => mobileSidebar.classList.add('active');
+        if (mobileSidebarClose && mobileSidebar) mobileSidebarClose.onclick = () => mobileSidebar.classList.remove('active');
     }
 
+    // ★ [수정] 도움말, 사운드, 테마 상단 네비게이션 이벤트 보완 ★
     function initNavControls() {
         const btnHelp = document.getElementById('btn-help');
         const helpModal = document.getElementById('help-modal');
@@ -76,8 +69,18 @@
         const soundToggleBtn = document.getElementById('sound-toggle-btn');
         const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
-        if (btnHelp && helpModal) btnHelp.onclick = () => helpModal.classList.add('active');
-        if (helpModalClose && helpModal) helpModalClose.onclick = () => helpModal.classList.remove('active');
+        if (btnHelp && helpModal) {
+            btnHelp.onclick = (e) => {
+                e.preventDefault();
+                helpModal.classList.add('active');
+            };
+        }
+        if (helpModalClose && helpModal) {
+            helpModalClose.onclick = (e) => {
+                e.preventDefault();
+                helpModal.classList.remove('active');
+            };
+        }
 
         if (soundToggleBtn) {
             soundToggleBtn.onclick = () => {
@@ -93,6 +96,7 @@
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 document.body.setAttribute('data-theme', currentTheme);
                 themeToggleBtn.innerText = (currentTheme === 'dark') ? '☀️' : '🌙';
+                showToast(currentTheme === 'dark' ? '다크 모드로 변경되었습니다.' : '라이트 모드로 변경되었습니다.');
             };
         }
     }
@@ -128,7 +132,7 @@
             checkUrlQueryParams();
         };
         socket.onmessage = (e) => {
-            try { handleServerMessage(JSON.parse(e.data)); } catch (err) {}
+            try { handleServerMessage(JSON.parse(e.data)); } catch (err) { console.error(err); }
         };
         socket.onclose = () => {
             const statusEl = document.getElementById('status-text');
@@ -150,18 +154,18 @@
             roomState = msg.state;
             document.getElementById('lobby-section').style.display = 'none';
             document.getElementById('arena-section').style.display = 'block';
-            updateUI();
+            updateUI(true);
         } else if (msg.type === 'STARTING_DRAW') {
             showTurnOrderDrawModal(msg.turn_order_list);
             setTimeout(() => {
                 const drawModal = document.getElementById('draw-modal');
                 if (drawModal) drawModal.classList.remove('active');
                 roomState = msg.state;
-                updateUI();
+                updateUI(true);
             }, 2500);
         } else if (msg.type === 'ROOM_UPDATED') {
             roomState = msg.state;
-            updateUI();
+            updateUI(false);
         } else if (msg.type === 'CHAT_MESSAGE') {
             if (roomState && msg.chat) {
                 roomState.chat_logs.push(msg.chat);
@@ -169,6 +173,8 @@
             }
         } else if (msg.type === 'ERROR') {
             showToast(msg.message || '오류가 발생했습니다.');
+            const hostStartBtn = document.getElementById('btn-host-start');
+            if (hostStartBtn) hostStartBtn.disabled = false;
         }
     }
 
@@ -184,7 +190,30 @@
                 listContainer.appendChild(card);
             });
         }
-        document.getElementById('draw-modal').classList.add('active');
+        const drawModal = document.getElementById('draw-modal');
+        if (drawModal) drawModal.classList.add('active');
+    }
+
+    function sortTileSetAuto(set) {
+        if (!set || set.length <= 1) return set;
+        const jokers = set.filter(t => t.is_joker);
+        const nonJokers = set.filter(t => !t.is_joker);
+
+        if (nonJokers.length === 0) return set;
+
+        const isSameColor = nonJokers.every(t => t.color === nonJokers[0].color);
+        if (isSameColor) {
+            nonJokers.sort((a, b) => a.number - b.number);
+            return [...nonJokers, ...jokers];
+        }
+
+        const isSameNumber = nonJokers.every(t => t.number === nonJokers[0].number);
+        if (isSameNumber) {
+            nonJokers.sort((a, b) => a.color.localeCompare(b.color));
+            return [...nonJokers, ...jokers];
+        }
+
+        return set;
     }
 
     function isValidRummikubSet(set) {
@@ -192,70 +221,77 @@
         const nonJokers = set.filter(t => !t.is_joker);
         if (nonJokers.length === 0) return true;
 
-        const isGroupCandidate = nonJokers.every(t => t.number === nonJokers[0].number);
-        if (isGroupCandidate) {
+        const isGroup = nonJokers.every(t => t.number === nonJokers[0].number);
+        if (isGroup) {
             const colors = nonJokers.map(t => t.color);
             const uniqueColors = new Set(colors);
-            if (colors.length === uniqueColors.size && set.length <= 4) {
-                return true;
-            }
+            if (colors.length === uniqueColors.size && set.length <= 4) return true;
         }
 
-        const isRunCandidate = nonJokers.every(t => t.color === nonJokers[0].color);
-        if (isRunCandidate) {
-            return true;
+        const isSameColor = nonJokers.every(t => t.color === nonJokers[0].color);
+        if (isSameColor) {
+            const sorted = [...nonJokers].sort((a, b) => a.number - b.number);
+            let neededJokers = 0;
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const diff = sorted[i+1].number - sorted[i].number;
+                if (diff === 0) return false;
+                if (diff > 1) neededJokers += (diff - 1);
+            }
+            const actualJokers = set.length - nonJokers.length;
+            if (actualJokers >= neededJokers) return true;
         }
 
         return false;
     }
 
-    // ★ 상태별 준비 버튼 제어 및 정확한 패 매칭 ★
-    function updateUI() {
+    function applyRackSort() {
+        if (currentSortMode === 'color') {
+            localRack.sort((a, b) => a.color.localeCompare(b.color) || a.number - b.number);
+        } else if (currentSortMode === 'number') {
+            localRack.sort((a, b) => a.number - b.number || a.color.localeCompare(b.color));
+        }
+    }
+
+    function updateUI(isFirstJoin) {
         if (!roomState) return;
 
         const status = roomState.status;
         const myPlayer = roomState.players.find(p => p.player_id === myPlayerId);
-        const hostBtn = document.getElementById('btn-host-start');
         const readyBtn = document.getElementById('btn-toggle-ready');
-        const roomBadge = document.getElementById('room-state-badge');
         const turnBanner = document.getElementById('turn-banner');
         const turnPlayerBadge = document.getElementById('turn-player-badge');
         const hostControls = document.getElementById('host-controls');
+        const hostStartBtn = document.getElementById('btn-host-start');
+        const roomBadge = document.getElementById('room-state-badge');
 
         document.getElementById('display-room-code').innerText = roomState.room_id;
         document.getElementById('display-grid-info').innerText = `턴 제한 시간: ${roomState.turn_time_limit || 60}초`;
 
-        const titleEl = document.getElementById('display-topic-title');
-        if (titleEl && roomState.title) titleEl.innerText = roomState.title;
-
         if (status === 'WAITING') {
             if (roomBadge) { roomBadge.className = 'room-state-badge waiting'; roomBadge.innerText = '대기 중'; }
             if (turnBanner) turnBanner.style.display = 'none';
-
-            // 대기실에서만 준비 버튼 표시
             if (readyBtn) {
                 readyBtn.style.display = 'inline-block';
-                if (myPlayer) {
-                    readyBtn.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
-                }
+                if (myPlayer) readyBtn.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
             }
 
             if (myPlayer && myPlayer.is_host) {
                 if (hostControls) hostControls.style.display = 'block';
-                if (hostBtn) {
+                if (hostStartBtn) {
                     const allReady = roomState.players.every(p => p.is_ready);
-                    hostBtn.disabled = !allReady;
-                    hostBtn.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
+                    if (!hostStartBtn.getAttribute('data-loading')) {
+                        hostStartBtn.disabled = !allReady;
+                        hostStartBtn.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
+                    }
                 }
             } else {
                 if (hostControls) hostControls.style.display = 'none';
             }
         } else {
-            // ★ PLAYING (게임 진행 중) 시 준비 버튼 완벽 숨김 ★
             if (roomBadge) { roomBadge.className = 'room-state-badge playing'; roomBadge.innerText = '게임 진행 중'; }
             if (turnBanner) turnBanner.style.display = 'flex';
             if (hostControls) hostControls.style.display = 'none';
-            if (readyBtn) readyBtn.style.display = 'none'; // 게임 중에는 준비 버튼 제거!
+            if (readyBtn) readyBtn.style.display = 'none';
 
             const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
             const turnPlayer = roomState.players.find(p => p.player_id === roomState.current_turn_player_id);
@@ -263,29 +299,29 @@
             if (turnPlayerBadge) {
                 if (isMyTurn) {
                     turnPlayerBadge.className = 'turn-player-badge my-turn';
-                    turnPlayerBadge.innerText = '내 턴입니다! (자유롭게 재조합하거나 조커를 교체하세요)';
+                    turnPlayerBadge.innerText = '내 턴입니다! (타일을 자유롭게 이동/재조합하세요)';
                 } else {
                     turnPlayerBadge.className = 'turn-player-badge';
-                    turnPlayerBadge.innerHTML = `<span style="color:${turnPlayer?.color || '#000'}; font-weight:bold;">${escapeHtml(turnPlayer?.nickname || '참여자')}</span> 님의 턴`;
+                    turnPlayerBadge.innerHTML = `<span style="color:${turnPlayer?.color || '#000'};">${escapeHtml(turnPlayer?.nickname || '참여자')}</span> 님의 턴`;
                 }
             }
 
             if (roomState.current_turn_player_id === myPlayerId && previousTurnPlayerId !== myPlayerId) {
                 showToast("🧩 당신의 턴입니다! 자유 조합을 시작하세요!");
-                originalTurnRack = JSON.parse(JSON.stringify(myPlayer?.rack || []));
-                originalTurnTableSets = JSON.parse(JSON.stringify(roomState.table_sets || []));
+                selectedTiles = [];
             }
             previousTurnPlayerId = roomState.current_turn_player_id;
 
-            startClientTurnTimer(roomState.turn_time_remaining || roomState.turn_time_limit || 60, roomState.turn_time_limit || 60);
+            startClientTurnTimer(roomState.turn_time_remaining || 60, roomState.turn_time_limit || 60);
         }
 
-        // ★ 본인 패(Rack) 정밀 매칭 및 데이터 동기화 ★
         if (myPlayer && myPlayer.rack) {
             localRack = [...myPlayer.rack];
+            applyRackSort();
         }
 
         localTableSets = JSON.parse(JSON.stringify(roomState.table_sets || []));
+        localTableSets = localTableSets.map(set => sortTileSetAuto(set));
 
         renderRack();
         renderTable();
@@ -322,20 +358,24 @@
         const container = document.getElementById('my-rack-container');
         if (!container) return;
         container.innerHTML = '';
-        localRack.forEach(tile => {
+
+        localRack.forEach((tile, index) => {
+            const isSel = selectedTiles.some(t => t.id === tile.id);
             const div = document.createElement('div');
-            const isSel = selectedTiles.includes(tile.id);
             div.className = `rummi-tile tile-${tile.color} ${isSel ? 'selected' : ''}`;
             div.innerText = tile.is_joker ? '★' : tile.number;
 
             div.onclick = (e) => {
                 e.stopPropagation();
-                selectedTableTile = null;
+                if (myPlayerId !== roomState?.current_turn_player_id && roomState?.status === 'PLAYING') {
+                    showToast("내 턴일 때만 조작할 수 있습니다.");
+                    return;
+                }
 
                 if (isSel) {
-                    selectedTiles = selectedTiles.filter(id => id !== tile.id);
+                    selectedTiles = selectedTiles.filter(t => t.id !== tile.id);
                 } else {
-                    selectedTiles.push(tile.id);
+                    selectedTiles.push({ ...tile, source: 'rack', rackIndex: index });
                 }
                 renderRack();
                 renderTable();
@@ -353,25 +393,26 @@
             const emptyGuide = document.createElement('div');
             emptyGuide.style.cssText = 'width:100%; text-align:center; padding:40px 10px; color:#888; font-size:0.9rem; border:2px dashed #ccc; border-radius:4px;';
             emptyGuide.innerText = selectedTiles.length > 0 
-                ? '🧩 선택한 타일을 여기(공유 테이블)를 터치하여 내놓으세요!' 
-                : '공유 테이블이 비어있습니다. 내 거치대에서 타일을 내놓으세요.';
+                ? '🧩 선택한 타일을 여기(공유 테이블)를 클릭하여 새 세트로 내놓으세요!' 
+                : '공유 테이블이 비어있습니다.';
             container.appendChild(emptyGuide);
         }
 
+        localTableSets = localTableSets.filter(s => s && s.length > 0);
+
         localTableSets.forEach((set, setIndex) => {
             const setEl = document.createElement('div');
-            const isValidSet = isValidRummikubSet(set);
-            setEl.className = 'tile-group-set' + (isValidSet ? '' : ' invalid-set');
-            if (!isValidSet) {
+            const isValid = isValidRummikubSet(set);
+            setEl.className = 'tile-group-set' + (isValid ? '' : ' invalid-set');
+            if (!isValid) {
                 setEl.style.borderColor = '#E53935';
                 setEl.style.backgroundColor = 'rgba(229, 57, 53, 0.1)';
             }
 
             set.forEach((tile, tileIndex) => {
+                const isSel = selectedTiles.some(t => t.id === tile.id);
                 const div = document.createElement('div');
-                const isSelectedTable = (selectedTableTile && selectedTableTile.setIndex === setIndex && selectedTableTile.tileIndex === tileIndex);
-                
-                div.className = `rummi-tile tile-${tile.color} ${isSelectedTable ? 'selected' : ''}`;
+                div.className = `rummi-tile tile-${tile.color} ${isSel ? 'selected' : ''}`;
                 if (tile.is_joker) {
                     div.style.background = '#F3E5F5';
                     div.style.borderColor = '#8E44AD';
@@ -381,68 +422,51 @@
                 div.onclick = (e) => {
                     e.stopPropagation();
                     if (myPlayerId !== roomState?.current_turn_player_id) {
-                        showToast("내 턴일 때만 조작할 수 있습니다!");
+                        showToast("내 턴일 때만 조작할 수 있습니다.");
                         return;
                     }
 
-                    if (tile.is_joker && selectedTiles.length === 1) {
-                        const replaceTile = localRack.find(t => t.id === selectedTiles[0]);
-                        if (replaceTile) {
-                            localTableSets[setIndex][tileIndex] = replaceTile;
-                            localRack = localRack.filter(t => t.id !== replaceTile.id);
-                            localRack.push(tile);
-                            selectedTiles = [];
-                            showToast("🌟 조커(★)를 실제 타일로 교체하여 회수했습니다!");
-                            renderRack();
-                            renderTable();
-                            return;
-                        }
-                    }
-
-                    if (selectedTiles.length > 0) {
-                        appendSelectedRackTilesToSet(setIndex);
-                        return;
-                    }
-
-                    if (set.length >= 4 && tileIndex > 0 && tileIndex < set.length - 1) {
-                        const leftPart = set.slice(0, tileIndex);
-                        const rightPart = set.slice(tileIndex);
-                        localTableSets.splice(setIndex, 1, leftPart, rightPart);
-                        showToast("✂️ 긴 세트를 두 개의 묶음으로 쪼개었습니다!");
-                        renderRack();
-                        renderTable();
-                        return;
-                    }
-
-                    if (isSelectedTable) {
-                        selectedTableTile = null;
-                        showToast("타일 떼어내기를 취소했습니다.");
+                    if (isSel) {
+                        selectedTiles = selectedTiles.filter(t => t.id !== tile.id);
                     } else {
-                        selectedTableTile = { setIndex, tileIndex, tile };
-                        showToast(`'${tile.is_joker ? '조커' : tile.number}' 타일을 떼어낼 준비가 되었습니다.`);
+                        selectedTiles.push({ ...tile, source: 'table', setIndex, tileIndex });
                     }
+                    renderRack();
                     renderTable();
                 };
 
                 setEl.appendChild(div);
             });
 
-            if (selectedTiles.length > 0 || selectedTableTile) {
+            if (selectedTiles.length > 0) {
                 const guideTag = document.createElement('span');
                 guideTag.className = 'append-guide-tag';
-                guideTag.innerText = selectedTableTile ? '+ 이동 붙이기' : '+ 덧붙이기';
+                guideTag.innerText = '+ 여기에 붙이기';
                 setEl.appendChild(guideTag);
             }
 
             setEl.onclick = (e) => {
                 e.stopPropagation();
                 if (myPlayerId !== roomState?.current_turn_player_id) return;
+                if (selectedTiles.length === 0) return;
 
-                if (selectedTableTile) {
-                    moveDetachedTileToSet(setIndex);
-                } else if (selectedTiles.length > 0) {
-                    appendSelectedRackTilesToSet(setIndex);
-                }
+                selectedTiles.forEach(st => {
+                    if (st.source === 'rack') {
+                        localRack = localRack.filter(t => t.id !== st.id);
+                    } else if (st.source === 'table') {
+                        if (localTableSets[st.setIndex]) {
+                            localTableSets[st.setIndex] = localTableSets[st.setIndex].filter(t => t.id !== st.id);
+                        }
+                    }
+                });
+
+                const rawTiles = selectedTiles.map(st => ({ id: st.id, color: st.color, number: st.number, is_joker: st.is_joker }));
+                localTableSets[setIndex] = sortTileSetAuto([...localTableSets[setIndex], ...rawTiles]);
+
+                selectedTiles = [];
+                showToast("타일을 해당 세트에 합치고 자동으로 순서를 정렬했습니다.");
+                renderRack();
+                renderTable();
             };
 
             container.appendChild(setEl);
@@ -450,48 +474,26 @@
 
         container.onclick = () => {
             if (myPlayerId !== roomState?.current_turn_player_id) return;
+            if (selectedTiles.length === 0) return;
 
-            if (selectedTiles.length > 0) {
-                const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
-                localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+            selectedTiles.forEach(st => {
+                if (st.source === 'rack') {
+                    localRack = localRack.filter(t => t.id !== st.id);
+                } else if (st.source === 'table') {
+                    if (localTableSets[st.setIndex]) {
+                        localTableSets[st.setIndex] = localTableSets[st.setIndex].filter(t => t.id !== st.id);
+                    }
+                }
+            });
 
-                localTableSets.push(playedTiles);
-                selectedTiles = [];
+            const newSetRaw = selectedTiles.map(st => ({ id: st.id, color: st.color, number: st.number, is_joker: st.is_joker }));
+            localTableSets.push(sortTileSetAuto(newSetRaw));
 
-                showToast("공유 테이블에 새로운 세트를 내놓았습니다!");
-                renderRack();
-                renderTable();
-            }
+            selectedTiles = [];
+            showToast("선택한 타일로 새 묶음을 만들었습니다.");
+            renderRack();
+            renderTable();
         };
-    }
-
-    function appendSelectedRackTilesToSet(targetSetIndex) {
-        const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
-        localRack = localRack.filter(t => !selectedTiles.includes(t.id));
-        localTableSets[targetSetIndex] = [...localTableSets[targetSetIndex], ...playedTiles];
-        selectedTiles = [];
-
-        showToast("테이블 세트에 타일을 덧붙였습니다!");
-        renderRack();
-        renderTable();
-    }
-
-    function moveDetachedTileToSet(targetSetIndex) {
-        if (!selectedTableTile) return;
-        const { setIndex, tileIndex, tile } = selectedTableTile;
-
-        localTableSets[setIndex].splice(tileIndex, 1);
-        if (localTableSets[setIndex].length === 0) {
-            localTableSets.splice(setIndex, 1);
-            if (targetSetIndex > setIndex) targetSetIndex--;
-        }
-
-        localTableSets[targetSetIndex].push(tile);
-        selectedTableTile = null;
-
-        showToast("타일을 이동하여 합쳤습니다!");
-        renderRack();
-        renderTable();
     }
 
     function renderPlayers() {
@@ -513,22 +515,14 @@
             const firstLetter = nickname.charAt(0).toUpperCase();
             const avatarColor = p.color || '#6366f1';
 
-            let statusHtml = '';
-            if (roomState.status === 'WAITING' || !roomState.status) {
-                statusHtml = p.is_ready
-                    ? '<span class="ready-tag ready">준비 완료</span>'
-                    : '<span class="ready-tag waiting">작성 중...</span>';
-            } else {
-                statusHtml = `<span>타일 ${p.tile_count || 0}개 ${isTurnPlayer ? '🎯' : ''}</span>`;
-            }
+            let statusHtml = (roomState.status === 'WAITING' || !roomState.status)
+                ? (p.is_ready ? '<span class="ready-tag ready">준비 완료</span>' : '<span class="ready-tag waiting">작성 중...</span>')
+                : `<span>타일 ${p.tile_count || 0}개 ${isTurnPlayer ? '🎯' : ''}</span>`;
 
             card.innerHTML = `
                 <div class="player-info">
                     <div class="player-avatar" style="background-color: ${avatarColor};">${firstLetter}</div>
-                    <div class="player-name">
-                        ${escapeHtml(nickname)}
-                        ${p.is_host ? '<span class="host-tag">방장</span>' : ''}
-                    </div>
+                    <div class="player-name">${escapeHtml(nickname)} ${p.is_host ? '<span class="host-tag">방장</span>' : ''}</div>
                 </div>
                 <div>${statusHtml}</div>
             `;
@@ -552,8 +546,23 @@
 
     function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
+    // ★ [수정] 전역 클릭 위임 이벤트에 도움말 모달 연동 보완 ★
     function initGlobalClickDelegation() {
         document.addEventListener('click', (e) => {
+            // 도움말 버튼 클릭 시 모달 열기 위임
+            if (e.target.matches('#btn-help') || e.target.closest('#btn-help')) {
+                const helpModal = document.getElementById('help-modal');
+                if (helpModal) helpModal.classList.add('active');
+                return;
+            }
+
+            // 도움말 모달 닫기
+            if (e.target.matches('#help-modal-close') || e.target.closest('#help-modal-close')) {
+                const helpModal = document.getElementById('help-modal');
+                if (helpModal) helpModal.classList.remove('active');
+                return;
+            }
+
             const timeBtn = e.target.closest('.time-btn');
             if (timeBtn) {
                 document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
@@ -580,7 +589,6 @@
                     if (joinForm) joinForm.style.display = 'block';
                     if (createForm) createForm.style.display = 'none';
                 }
-                return;
             }
         });
     }
@@ -596,11 +604,22 @@
         const btnSortColor = document.getElementById('btn-sort-color');
         const btnSortNumber = document.getElementById('btn-sort-number');
         const btnSubmitTurn = document.getElementById('btn-submit-turn');
+
         const btnCopyLink = document.getElementById('btn-copy-link');
         const btnShowQr = document.getElementById('btn-show-qr');
+        const qrModal = document.getElementById('qr-modal');
+        const qrModalClose = document.getElementById('qr-modal-close');
 
         if (btnToggleReady) btnToggleReady.onclick = () => sendMessage({ type: 'TOGGLE_READY' });
-        if (hostStartBtn) hostStartBtn.onclick = () => sendMessage({ type: 'START_GAME' });
+
+        if (hostStartBtn) {
+            hostStartBtn.onclick = () => {
+                hostStartBtn.disabled = true;
+                hostStartBtn.setAttribute('data-loading', 'true');
+                hostStartBtn.innerText = '⏳ 타일 섞는 중...';
+                sendMessage({ type: 'START_GAME', room_id: currentRoomId });
+            };
+        }
 
         if (btnHostReset) btnHostReset.onclick = () => { if (resetOptionModal) resetOptionModal.classList.add('active'); };
         if (btnResetConfirm) {
@@ -613,17 +632,19 @@
 
         if (btnSortColor) {
             btnSortColor.onclick = () => {
-                localRack.sort((a, b) => a.color.localeCompare(b.color) || a.number - b.number);
+                currentSortMode = 'color';
+                applyRackSort();
                 renderRack();
-                showToast("타일을 색상별로 정렬했습니다.");
+                showToast("타일을 색상별로 정렬했습니다. (매 턴 유지됨)");
             };
         }
 
         if (btnSortNumber) {
             btnSortNumber.onclick = () => {
-                localRack.sort((a, b) => a.number - b.number || a.color.localeCompare(b.color));
+                currentSortMode = 'number';
+                applyRackSort();
                 renderRack();
-                showToast("타일을 숫자별로 정렬했습니다.");
+                showToast("타일을 숫자별로 정렬했습니다. (매 턴 유지됨)");
             };
         }
 
@@ -634,28 +655,29 @@
                     return;
                 }
 
-                if (selectedTiles.length > 0) {
-                    const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
-                    localRack = localRack.filter(t => !selectedTiles.includes(t.id));
-                    localTableSets.push(playedTiles);
-                    selectedTiles = [];
-                }
+                selectedTiles = [];
+                localTableSets = localTableSets.filter(s => s && s.length > 0);
 
-                const invalidSet = localTableSets.find(s => s.length < 3 || !isValidRummikubSet(s));
+                const invalidSet = localTableSets.find(s => !isValidRummikubSet(s));
                 if (invalidSet) {
-                    showToast("⚠️ 테이블에 3장 미만이거나 유효하지 않은 조합이 존재합니다! 조합을 완성해 주세요.");
+                    showToast("⚠️ 공유 테이블에 3장 미만이거나 올바르지 않은 세트 규칙이 존재합니다!");
+                    renderTable();
                     return;
                 }
 
-                sendMessage({ type: 'SUBMIT_TURN', table_sets: localTableSets, rack: localRack });
+                sendMessage({ type: 'SUBMIT_TURN', room_id: currentRoomId, table_sets: localTableSets, rack: localRack });
             };
         }
 
         if (btnCopyLink) {
             btnCopyLink.onclick = () => {
                 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-                if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
-                else prompt('아래 링크를 복사하세요:', shareUrl);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'))
+                    .catch(() => prompt('아래 링크를 복사하세요:', shareUrl));
+                } else {
+                    prompt('아래 링크를 복사하세요:', shareUrl);
+                }
             };
         }
 
@@ -665,33 +687,18 @@
                 const qrContainer = document.getElementById('qrcode');
                 if (qrContainer) {
                     qrContainer.innerHTML = '';
-                    if (typeof QRCode === 'function') new QRCode(qrContainer, { text: shareUrl, width: 180, height: 180 });
-                    else qrContainer.innerText = shareUrl;
+                    if (typeof QRCode === 'function') {
+                        new QRCode(qrContainer, { text: shareUrl, width: 180, height: 180 });
+                    } else {
+                        qrContainer.innerText = shareUrl;
+                    }
                 }
-                const qrModal = document.getElementById('qr-modal');
                 if (qrModal) qrModal.classList.add('active');
             };
         }
 
-        const qrModalClose = document.getElementById('qr-modal-close');
-        if (qrModalClose) qrModalClose.onclick = () => document.getElementById('qr-modal').classList.remove('active');
-
-        const stabChat = document.getElementById('stab-chat');
-        const stabCalls = document.getElementById('stab-calls');
-        const panelChat = document.getElementById('panel-chat');
-        const panelCalls = document.getElementById('panel-calls');
-
-        if (stabChat && stabCalls) {
-            stabChat.onclick = () => {
-                stabChat.classList.add('active'); stabCalls.classList.remove('active');
-                if (panelChat) panelChat.style.display = 'flex';
-                if (panelCalls) panelCalls.style.display = 'none';
-            };
-            stabCalls.onclick = () => {
-                stabCalls.classList.add('active'); stabChat.classList.remove('active');
-                if (panelCalls) panelCalls.style.display = 'flex';
-                if (panelChat) panelChat.style.display = 'none';
-            };
+        if (qrModalClose && qrModal) {
+            qrModalClose.onclick = () => qrModal.classList.remove('active');
         }
     }
 
@@ -702,10 +709,10 @@
         if (createForm) {
             createForm.onsubmit = (e) => {
                 e.preventDefault();
-                const customTitle = document.getElementById('create-title') ? document.getElementById('create-title').value.trim() : '레트로 실시간 루미큐브';
                 sendMessage({
-                    type: 'CREATE_ROOM', game_type: 'RUMMIKUB',
-                    title: customTitle,
+                    type: 'CREATE_ROOM', 
+                    game_type: 'RUMMIKUB',
+                    title: document.getElementById('create-title') ? document.getElementById('create-title').value.trim() : '레트로 실시간 루미큐브',
                     nickname: document.getElementById('create-nickname').value,
                     turn_time_limit: selectedTimeLimit
                 });
@@ -728,14 +735,14 @@
             chatForm.onsubmit = (e) => {
                 e.preventDefault();
                 if (chatInput && chatInput.value.trim()) {
-                    sendMessage({ type: 'CHAT_MESSAGE', message: chatInput.value.trim() });
+                    sendMessage({ type: 'CHAT_MESSAGE', room_id: currentRoomId, message: chatInput.value.trim() });
                     chatInput.value = '';
                 }
             };
         }
     }
 
-    // 실행 초기화
+    // 초기화 실행
     initStealthMode();
     initMobileSidebar();
     initNavControls();

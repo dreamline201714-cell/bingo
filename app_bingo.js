@@ -1,12 +1,11 @@
 /**
- * Office Bingo Live Client Application Logic - Victory/GameOver Modal Restored
+ * Office Bingo Live Client Application Logic - Perfect Fixed Version
  */
 
 (function () {
     let socket = null;
     let currentRoomId = null;
     let myPlayerId = null;
-    let isHost = false;
     let soundEnabled = true;
     let currentTheme = 'light';
     let previousTurnPlayerId = null;
@@ -99,6 +98,7 @@
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 document.body.setAttribute('data-theme', currentTheme);
                 themeToggleBtn.innerText = (currentTheme === 'dark') ? '☀️' : '🌙';
+                showToast(currentTheme === 'dark' ? '다크 모드로 변경되었습니다.' : '라이트 모드로 변경되었습니다.');
             };
         }
     }
@@ -189,7 +189,11 @@
         };
 
         socket.onmessage = (event) => {
-            try { handleServerMessage(JSON.parse(event.data)); } catch (e) {}
+            try { 
+                handleServerMessage(JSON.parse(event.data)); 
+            } catch (e) {
+                console.error("웹소켓 데이터 파싱 오류:", e);
+            }
         };
 
         socket.onclose = () => {
@@ -224,7 +228,6 @@
         document.getElementById('draw-modal').classList.add('active');
     }
 
-    // ★ 게임 종료 결과 모달 팝업 표시 ★
     function showGameOverModal(winners, isWinnerMode) {
         const gameOverModal = document.getElementById('game-over-modal');
         const iconEl = document.getElementById('game-over-icon');
@@ -250,7 +253,6 @@
                 if (msgEl) msgEl.innerText = `[${winnerNames}] 님이 승리 목표를 달성하여 우승했습니다.`;
             }
         } else {
-            // 패자 결정전
             if (isMeWinner) {
                 if (iconEl) iconEl.innerText = '💣';
                 if (titleEl) titleEl.innerText = '벌칙 당첨!';
@@ -291,7 +293,6 @@
             case 'ROOM_JOINED':
                 currentRoomId = msg.room_id;
                 myPlayerId = msg.player_id;
-                isHost = msg.is_host;
                 roomState = msg.state;
                 document.getElementById('lobby-section').style.display = 'none';
                 document.getElementById('arena-section').style.display = 'block';
@@ -310,7 +311,6 @@
                 const oldStatus = roomState ? roomState.status : 'WAITING';
                 roomState = msg.state;
 
-                // ★ 게임이 PLAYING -> WAITING으로 바뀌었을 때 승자 결과 모달 띄우기 ★
                 if (oldStatus === 'PLAYING' && roomState.status === 'WAITING') {
                     const targetLines = roomState.config.target_lines || roomState.config.size;
                     const winners = roomState.players.filter(p => (p.score || 0) >= targetLines);
@@ -423,7 +423,7 @@
             if (myLineCount) myLineCount.innerText = `${myPlayer.score || 0} 줄`;
 
             if (btnToggleReady) {
-                btnToggleReady.style.display = 'inline-block';
+                btnToggleReady.style.display = (status === 'WAITING') ? 'inline-block' : 'none';
                 btnToggleReady.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
             }
 
@@ -574,12 +574,9 @@
         if (mobilePlayerCount) mobilePlayerCount.innerText = playersList.length;
 
         playersList.forEach(p => {
-            let statusHtml = '';
-            if (status === 'WAITING') {
-                statusHtml = p.is_ready ? '<span class="ready-tag ready">준비 완료</span>' : '<span class="ready-tag waiting">작성 중...</span>';
-            } else {
-                statusHtml = `<span style="font-size:0.75rem; font-weight:bold; color:var(--accent);">${p.score || 0}줄 완성</span>`;
-            }
+            let statusHtml = (status === 'WAITING') 
+                ? (p.is_ready ? '<span class="ready-tag ready">준비 완료</span>' : '<span class="ready-tag waiting">작성 중...</span>')
+                : `<span style="font-size:0.75rem; font-weight:bold; color:var(--accent);">${p.score || 0}줄 완성</span>`;
 
             const card = document.createElement('div');
             card.className = 'player-card';
@@ -623,8 +620,35 @@
 
     function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
+    // ★ 클릭 위임(Click Delegation) 패턴으로 방장 버튼 이벤트 끊김 원천 차단 ★
     function initGlobalClickDelegation() {
         document.addEventListener('click', (e) => {
+            // 1. 대기실 리셋 버튼
+            if (e.target.matches('#btn-host-reset') || e.target.closest('#btn-host-reset')) {
+                const resetOptionModal = document.getElementById('reset-option-modal');
+                if (resetOptionModal) resetOptionModal.classList.add('active');
+                return;
+            }
+
+            // 2. 주제/설정 변경 버튼
+            if (e.target.matches('#btn-host-config') || e.target.closest('#btn-host-config')) {
+                const configModal = document.getElementById('config-modal');
+                if (configModal && roomState && roomState.config) {
+                    const configTopicInput = document.getElementById('config-topic-input');
+                    const configWordsInput = document.getElementById('config-words-input');
+                    const configTargetLinesSelect = document.getElementById('config-target-lines');
+
+                    if (configTopicInput) configTopicInput.value = roomState.config.topic || '자유 주제';
+                    if (configWordsInput) configWordsInput.value = (roomState.config.word_pool || []).join('\n');
+                    updateTargetLinesOptions(roomState.config.size || 5, configTargetLinesSelect);
+                    if (configTargetLinesSelect) configTargetLinesSelect.value = roomState.config.target_lines || roomState.config.size || 5;
+
+                    configModal.classList.add('active');
+                }
+                return;
+            }
+
+            // 3. 승패 방식 및 크기 선택
             const modeBtn = e.target.closest('.mode-btn');
             if (modeBtn) {
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
@@ -675,7 +699,6 @@
                     if (joinForm) joinForm.style.display = 'block';
                     if (createForm) createForm.style.display = 'none';
                 }
-                return;
             }
         });
     }
@@ -685,10 +708,6 @@
         const btnAutoFill = document.getElementById('btn-auto-fill');
         const btnClearBoard = document.getElementById('btn-clear-board');
         const hostStartBtn = document.getElementById('btn-host-start');
-        const btnHostReset = document.getElementById('btn-host-reset');
-        const btnHostConfig = document.getElementById('btn-host-config');
-        const btnCopyLink = document.getElementById('btn-copy-link');
-        const btnShowQr = document.getElementById('btn-show-qr');
 
         const btnResetKeep = document.getElementById('btn-reset-keep');
         const btnResetShuffle = document.getElementById('btn-reset-shuffle');
@@ -702,6 +721,8 @@
         const spectateModalClose = document.getElementById('spectate-modal-close');
         const spectateModal = document.getElementById('spectate-modal');
 
+        const btnCopyLink = document.getElementById('btn-copy-link');
+        const btnShowQr = document.getElementById('btn-show-qr');
         const qrModal = document.getElementById('qr-modal');
         const qrModalClose = document.getElementById('qr-modal-close');
 
@@ -715,11 +736,11 @@
                         return;
                     }
                 }
-                sendMessage({ type: 'TOGGLE_READY' });
+                sendMessage({ type: 'TOGGLE_READY', room_id: currentRoomId });
             };
         }
 
-        if (hostStartBtn) hostStartBtn.onclick = () => sendMessage({ type: 'START_GAME' });
+        if (hostStartBtn) hostStartBtn.onclick = () => sendMessage({ type: 'START_GAME', room_id: currentRoomId });
 
         if (btnAutoFill) {
             btnAutoFill.onclick = () => {
@@ -757,25 +778,9 @@
             };
         }
 
-        if (btnHostReset) btnHostReset.onclick = () => { if (resetOptionModal) resetOptionModal.classList.add('active'); };
         if (btnResetKeep) btnResetKeep.onclick = () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: true }); if (resetOptionModal) resetOptionModal.classList.remove('active'); };
         if (btnResetShuffle) btnResetShuffle.onclick = () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: false }); if (resetOptionModal) resetOptionModal.classList.remove('active'); };
         if (btnResetCancel) btnResetCancel.onclick = () => { if (resetOptionModal) resetOptionModal.classList.remove('active'); };
-
-        if (btnHostConfig) {
-            btnHostConfig.onclick = () => {
-                if (!roomState || !roomState.config) return;
-                const configTopicInput = document.getElementById('config-topic-input');
-                const configWordsInput = document.getElementById('config-words-input');
-                const configTargetLinesSelect = document.getElementById('config-target-lines');
-
-                if (configTopicInput) configTopicInput.value = roomState.config.topic || '자유 주제';
-                if (configWordsInput) configWordsInput.value = (roomState.config.word_pool || []).join('\n');
-                updateTargetLinesOptions(roomState.config.size || 5, configTargetLinesSelect);
-                if (configTargetLinesSelect) configTargetLinesSelect.value = roomState.config.target_lines || roomState.config.size || 5;
-                if (configModal) configModal.classList.add('active');
-            };
-        }
 
         if (btnConfigSave) {
             btnConfigSave.onclick = () => {
@@ -801,8 +806,12 @@
         if (btnCopyLink) {
             btnCopyLink.onclick = () => {
                 const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-                if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
-                else prompt('아래 링크를 복사하세요:', shareUrl);
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'))
+                    .catch(() => prompt('아래 링크를 복사하세요:', shareUrl));
+                } else {
+                    prompt('아래 링크를 복사하세요:', shareUrl);
+                }
             };
         }
 
@@ -819,24 +828,6 @@
             };
         }
         if (qrModalClose) qrModalClose.onclick = () => { if (qrModal) qrModal.classList.remove('active'); };
-
-        const stabChat = document.getElementById('stab-chat');
-        const stabCalls = document.getElementById('stab-calls');
-        const panelChat = document.getElementById('panel-chat');
-        const panelCalls = document.getElementById('panel-calls');
-
-        if (stabChat && stabCalls) {
-            stabChat.onclick = () => {
-                stabChat.classList.add('active'); stabCalls.classList.remove('active');
-                if (panelChat) panelChat.style.display = 'flex';
-                if (panelCalls) panelCalls.style.display = 'none';
-            };
-            stabCalls.onclick = () => {
-                stabCalls.classList.add('active'); stabChat.classList.remove('active');
-                if (panelCalls) panelCalls.style.display = 'flex';
-                if (panelChat) panelChat.style.display = 'none';
-            };
-        }
     }
 
     function initFormControls() {
@@ -895,14 +886,14 @@
             chatForm.onsubmit = function (e) {
                 e.preventDefault();
                 if (chatInput && chatInput.value.trim()) {
-                    sendMessage({ type: 'CHAT_MESSAGE', message: chatInput.value.trim() });
+                    sendMessage({ type: 'CHAT_MESSAGE', room_id: currentRoomId, message: chatInput.value.trim() });
                     chatInput.value = '';
                 }
             };
         }
     }
 
-    // 실행 초기화
+    // 초기화 실행
     initStealthMode();
     initMobileSidebar();
     initNavControls();

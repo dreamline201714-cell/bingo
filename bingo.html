@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_bingo.css?v=20260813_v15">
+    <link rel="stylesheet" href="common.css?v=20260813_v3">
+    <link rel="stylesheet" href="style_bingo.css?v=20260813_v18">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -230,8 +231,7 @@
 
                     <div class="sidebar-tabbed-area">
                         <div class="sidebar-tabs">
-                            <button class="sidebar-tab-btn active" id="stab-chat">대화</button>
-                            <button class="sidebar-tab-btn" id="stab-calls">시스템 알림</button>
+                            <button class="sidebar-tab-btn active" style="width:100%;">실시간 대화</button>
                         </div>
 
                         <div class="sidebar-content">
@@ -242,7 +242,6 @@
                                     <button type="submit" class="chat-send-btn">전송</button>
                                 </form>
                             </div>
-                            <div id="panel-calls" style="display: none;" class="call-list"></div>
                         </div>
                     </div>
                 </div>
@@ -250,33 +249,7 @@
         </section>
     </main>
 
-    <!-- ★ 승리자/패배자 게임 종료 모달 팝업 추가 ★ -->
-    <div class="modal-overlay" id="game-over-modal">
-        <div class="modal-box" style="text-align: center; max-width: 440px;">
-            <div id="game-over-icon" style="font-size: 3.5rem; margin-bottom: 8px;">🏆</div>
-            <h2 id="game-over-title" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 6px;">게임 종료!</h2>
-            <p id="game-over-message" style="font-size: 1rem; color: var(--text-primary); margin-bottom: 16px; line-height: 1.5;"></p>
-            
-            <div style="background: var(--bg-primary); border: 2px solid var(--border-block); padding: 10px; margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary);">
-                ⏱️ <span id="game-over-timer-num">15</span>초 후 자동으로 대기실로 돌아갑니다.
-            </div>
-
-            <button class="primary-btn" id="game-over-close-btn" style="margin: 0; width: 100%;">
-                <span>대기실로 돌아가기</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- 🎲 턴 순서 제비뽑기 모달 -->
-    <div class="modal-overlay" id="draw-modal">
-        <div class="modal-box" style="text-align: center;">
-            <div class="draw-spinner" id="draw-spinner" style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
-            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
-            <div class="draw-result-list" id="draw-result-list"></div>
-        </div>
-    </div>
-
-    <!-- 도움말 모달 -->
+    <!-- ★ 풍성하게 완벽 복원된 빙고 도움말 모달 ★ -->
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
@@ -322,16 +295,61 @@
                             <div class="help-step-num">5</div>
                             <div class="help-step-text">
                                 <strong>목표 빙고 줄 수 완성!</strong><br>
-                                목표 빙고 줄 수(1~12줄)를 가장 먼저 달성하면 승리하게 됩니다!
+                                빙고판의 가로·세로·대각선 줄을 완성하여 설정된 목표 줄 수(1~12줄)를 달성하면 판정합니다.
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">🎯 게임 모드</div>
+                    <div class="help-mode-grid">
+                        <div class="help-mode-card winner">
+                            <div class="help-mode-icon">🏆</div>
+                            <div class="help-mode-name">승자 결정전</div>
+                            <div class="help-mode-desc">가장 먼저 목표 줄 수를 달성한 1인이 우승하는 모드입니다.</div>
+                        </div>
+                        <div class="help-mode-card loser">
+                            <div class="help-mode-icon">💣</div>
+                            <div class="help-mode-name">패자 결정전</div>
+                            <div class="help-mode-desc">끝까지 목표를 달성하지 못하고 남아있는 마지막 1인이 벌칙 당첨되는 모드입니다.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">📐 보드 크기</div>
+                    <div class="help-size-row">
+                        <div class="help-size-item">⚡ <strong>3x3</strong> (9칸) - 스피드전</div>
+                        <div class="help-size-item">🌸 <strong>4x4</strong> (16칸) - 클래식</div>
+                        <div class="help-size-item">🔥 <strong>5x5</strong> (25칸) - 정통전</div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">💡 기타 팁</div>
+                    <ul class="help-tip-list">
+                        <li>참가자 목록에서 상대방 이름을 클릭하면 그 사람의 보드를 실시간으로 관전할 수 있습니다.</li>
+                        <li>대화 탭에서 모든 참가자들과 실시간 채팅이 가능합니다.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 방장 설정 변경 모달 -->
+    <!-- 대기실 리셋 옵션 모달 -->
+    <div class="modal-overlay" id="reset-option-modal">
+        <div class="modal-box" style="text-align: center; max-width: 400px;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">대기실 리셋 방식 선택</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="primary-btn" id="btn-reset-keep" style="margin:0; font-size: 0.95rem; padding: 10px;">보드 유지 (체크만 초기화)</button>
+                <button class="secondary-btn" id="btn-reset-shuffle" style="font-size: 0.95rem; padding: 10px;">보드 단어 새로 섞기</button>
+                <button class="secondary-btn" id="btn-reset-cancel" style="margin-top: 4px;">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 주제/설정 변경 모달 -->
     <div class="modal-overlay" id="config-modal">
         <div class="modal-box" style="max-width: 520px;">
             <div class="modal-header">
@@ -348,7 +366,7 @@
                     <div class="size-options" id="config-size-options">
                         <button type="button" class="config-size-btn" data-size="3">3 x 3</button>
                         <button type="button" class="config-size-btn" data-size="4">4 x 4</button>
-                        <button type="button" class="config-size-btn" data-size="5">5 x 5</button>
+                        <button type="button" class="config-size-btn selected" data-size="5">5 x 5</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -364,13 +382,40 @@
                     <textarea id="config-words-input" class="form-textarea" rows="4"></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="primary-btn" id="btn-config-save" style="margin: 0;">설정 저장 및 적용</button>
-                <button class="secondary-btn" id="btn-config-cancel">취소</button>
+            <div class="modal-footer" style="display: flex; gap: 6px; margin-top: 12px;">
+                <button class="primary-btn" id="btn-config-save" style="margin: 0; flex: 1;">설정 저장 및 적용</button>
+                <button class="secondary-btn" id="btn-config-cancel" style="width: auto;">취소</button>
             </div>
         </div>
     </div>
 
+    <!-- 승리자/패배자 결과 모달 -->
+    <div class="modal-overlay" id="game-over-modal">
+        <div class="modal-box" style="text-align: center; max-width: 440px;">
+            <div id="game-over-icon" style="font-size: 3.5rem; margin-bottom: 8px;">🏆</div>
+            <h2 id="game-over-title" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 6px;">게임 종료!</h2>
+            <p id="game-over-message" style="font-size: 1rem; color: var(--text-primary); margin-bottom: 16px; line-height: 1.5;"></p>
+            
+            <div style="background: var(--bg-primary); border: 2px solid var(--border-block); padding: 10px; margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+                ⏱️ <span id="game-over-timer-num">15</span>초 후 자동으로 대기실로 돌아갑니다.
+            </div>
+
+            <button class="primary-btn" id="game-over-close-btn" style="margin: 0; width: 100%;">
+                <span>대기실로 돌아가기</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 제비뽑기 모달 -->
+    <div class="modal-overlay" id="draw-modal">
+        <div class="modal-box" style="text-align: center;">
+            <div class="draw-spinner" id="draw-spinner" style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
+            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
+            <div class="draw-result-list" id="draw-result-list"></div>
+        </div>
+    </div>
+
+    <!-- 관전 모달 -->
     <div class="modal-overlay" id="spectate-modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -384,28 +429,18 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="reset-option-modal">
-        <div class="modal-box" style="text-align: center; max-width: 400px;">
-            <h3 style="font-size: 1.2rem; margin-bottom: 10px;">대기실 리셋 방식 선택</h3>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                <button class="primary-btn" id="btn-reset-keep" style="margin:0; font-size: 0.95rem; padding: 10px;">보드 유지 (체크만 초기화)</button>
-                <button class="secondary-btn" id="btn-reset-shuffle" style="font-size: 0.95rem; padding: 10px;">보드 단어 새로 섞기</button>
-                <button class="secondary-btn" id="btn-reset-cancel" style="margin-top: 4px;">취소</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- QR코드 모달 -->
     <div class="modal-overlay" id="qr-modal">
         <div class="modal-box">
             <div class="modal-header">
                 <h3>초대 QR 코드</h3>
                 <button class="modal-close" id="qr-modal-close">&times;</button>
             </div>
-            <div class="qr-box"><div id="qrcode"></div></div>
+            <div class="qr-box" style="text-align: center; padding: 10px;"><div id="qrcode" style="display: flex; justify-content: center; margin: 0 auto;"></div></div>
         </div>
     </div>
 
-    <script src="presets.js?v=20260813_v15"></script>
-    <script src="app_bingo.js?v=20260813_v15"></script>
+    <script src="presets.js?v=20260813_v18"></script>
+    <script src="app_bingo.js?v=20260813_v19"></script>
 </body>
 </html>
