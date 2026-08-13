@@ -1,5 +1,5 @@
 /**
- * Office Rummikub Live Client Application Logic - Append to Existing Set & Movement Fixed
+ * Office Rummikub Live Client Application Logic - Detach & Reorganize Tile Included
  */
 
 (function () {
@@ -9,7 +9,8 @@
     let roomState = null;
     let previousTurnPlayerId = null;
 
-    let selectedTiles = [];
+    let selectedTiles = []; // 내 거치대 선택 타일 ID 목록
+    let selectedTableTile = null; // { setIndex: Number, tileIndex: Number, tile: Object } - 떼어낼 테이블 타일
     let localRack = [];
     let localTableSets = [];
     let selectedTimeLimit = 60;
@@ -233,7 +234,7 @@
             if (turnPlayerBadge) {
                 if (isMyTurn) {
                     turnPlayerBadge.className = 'turn-player-badge my-turn';
-                    turnPlayerBadge.innerText = '내 턴입니다! (타일을 내거나 드로우하세요)';
+                    turnPlayerBadge.innerText = '내 턴입니다! (타일을 내거나 떼어내세요)';
                 } else {
                     turnPlayerBadge.className = 'turn-player-badge';
                     turnPlayerBadge.innerHTML = `<span style="color:${turnPlayer?.color || '#000'}; font-weight:bold;">${escapeHtml(turnPlayer?.nickname || '참여자')}</span> 님의 턴`;
@@ -241,7 +242,7 @@
             }
 
             if (roomState.current_turn_player_id === myPlayerId && previousTurnPlayerId !== myPlayerId) {
-                showToast("🧩 당신의 턴입니다! 타일을 선택하여 내세요!");
+                showToast("🧩 당신의 턴입니다! 타일을 조작해보세요!");
             }
             previousTurnPlayerId = roomState.current_turn_player_id;
 
@@ -294,84 +295,169 @@
 
             div.onclick = (e) => {
                 e.stopPropagation();
+                // 테이블 떼기 타일이 선택되어 있다면 떼기 취소
+                selectedTableTile = null;
+
                 if (isSel) {
                     selectedTiles = selectedTiles.filter(id => id !== tile.id);
                 } else {
                     selectedTiles.push(tile.id);
                 }
                 renderRack();
+                renderTable();
             };
             container.appendChild(div);
         });
     }
 
-    // ★ 공유 테이블 및 기존 세트에 덧붙이기 기능 완전 구현 ★
+    // ★ 테이블 낱개 타일 떼기 및 자유 재조합 연동 ★
     function renderTable() {
         const container = document.getElementById('table-sets-container');
         if (!container) return;
         container.innerHTML = '';
 
+        if (localTableSets.length === 0) {
+            const emptyGuide = document.createElement('div');
+            emptyGuide.style.cssText = 'width:100%; text-align:center; padding:40px 10px; color:#888; font-size:0.9rem; border:2px dashed #ccc; border-radius:4px;';
+            emptyGuide.innerText = selectedTiles.length > 0 
+                ? '🧩 선택한 타일을 여기(공유 테이블)를 터치하여 내놓으세요!' 
+                : '공유 테이블이 비어있습니다. 내 패에서 타일을 내놓으세요.';
+            container.appendChild(emptyGuide);
+        }
+
         localTableSets.forEach((set, setIndex) => {
             const setEl = document.createElement('div');
             setEl.className = 'tile-group-set';
 
-            set.forEach(tile => {
+            set.forEach((tile, tileIndex) => {
                 const div = document.createElement('div');
-                div.className = `rummi-tile tile-${tile.color}`;
+                const isSelectedTable = (selectedTableTile && selectedTableTile.setIndex === setIndex && selectedTableTile.tileIndex === tileIndex);
+                
+                div.className = `rummi-tile tile-${tile.color} ${isSelectedTable ? 'selected' : ''}`;
+                if (isSelectedTable) {
+                    div.style.borderColor = '#AA0000';
+                    div.style.boxShadow = '0 0 10px #AA0000';
+                }
                 div.innerText = tile.is_joker ? '★' : tile.number;
+
+                // ★ 테이블 위 낱개 타일 터치 시: 해당 타일만 '떼어내기' 선택 ★
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    if (myPlayerId !== roomState?.current_turn_player_id) {
+                        showToast("내 턴일 때만 타일을 조작할 수 있습니다!");
+                        return;
+                    }
+
+                    // 내 패 선택이 이미 되어있다면 패 덧붙이기 우선
+                    if (selectedTiles.length > 0) {
+                        appendSelectedRackTilesToSet(setIndex);
+                        return;
+                    }
+
+                    // 이전에 떼어낸 타일이 있고, 다른 타일을 누른 경우 -> 그 세트로 떼어낸 타일 이동
+                    if (selectedTableTile && (selectedTableTile.setIndex !== setIndex || selectedTableTile.tileIndex !== tileIndex)) {
+                        moveDetachedTileToSet(setIndex);
+                        return;
+                    }
+
+                    // 타일 떼어내기 선택 / 해제 토글
+                    if (isSelectedTable) {
+                        selectedTableTile = null;
+                        showToast("타일 떼어내기를 취소했습니다.");
+                    } else {
+                        selectedTableTile = { setIndex, tileIndex, tile };
+                        showToast(`'${tile.number}' 타일을 떼어낼 준비가 되었습니다. 이동할 세트나 빈 공간을 터치하세요!`);
+                    }
+                    renderTable();
+                };
+
                 setEl.appendChild(div);
             });
 
-            // 내 거치대에서 선택한 타일이 있을 때 기존 세트를 클릭하면 그 세트에 덧붙이기!
-            if (selectedTiles.length > 0) {
+            if (selectedTiles.length > 0 || selectedTableTile) {
                 const guideTag = document.createElement('span');
                 guideTag.className = 'append-guide-tag';
-                guideTag.innerText = '+ 여기에 붙이기';
+                guideTag.innerText = selectedTableTile ? '+ 여기에 떼어 붙이기' : '+ 붙이기';
                 setEl.appendChild(guideTag);
             }
 
+            // 세트 박스 자체 터치 시 덧붙이기/이동
             setEl.onclick = (e) => {
                 e.stopPropagation();
-                if (myPlayerId !== roomState?.current_turn_player_id) {
-                    showToast("내 턴일 때만 타일을 내놓을 수 있습니다!");
-                    return;
+                if (myPlayerId !== roomState?.current_turn_player_id) return;
+
+                if (selectedTableTile) {
+                    moveDetachedTileToSet(setIndex);
+                } else if (selectedTiles.length > 0) {
+                    appendSelectedRackTilesToSet(setIndex);
                 }
-
-                if (selectedTiles.length === 0) {
-                    showToast("내 거치대에서 내놓을 타일을 먼저 클릭하여 선택해 주세요!");
-                    return;
-                }
-
-                // 선택된 타일들을 내 거치대에서 빼서 해당 세트 뒤에 덧붙이기
-                const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
-                localRack = localRack.filter(t => !selectedTiles.includes(t.id));
-
-                localTableSets[setIndex] = [...localTableSets[setIndex], ...playedTiles];
-                selectedTiles = [];
-
-                showToast(`테이블의 ${setIndex + 1}번째 묶음에 타일을 덧붙였습니다!`);
-                renderRack();
-                renderTable();
             };
 
             container.appendChild(setEl);
         });
 
-        // 공유 테이블 빈 바닥 공간을 클릭하면 선택된 타일들로 '새로운 세트' 만들기
-        container.onclick = () => {
+        // 빈 공간 클릭 시: 떼어낸 타일로 '새 세트' 생성 또는 내 거치대 선택 타일로 새 세트 생성
+        container.onclick = (e) => {
             if (myPlayerId !== roomState?.current_turn_player_id) return;
-            if (selectedTiles.length === 0) return;
 
-            const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
-            localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+            if (selectedTableTile) {
+                // 떼어낸 1장만으로는 새 세트 못 만듦 (최소 3장 필요)
+                showToast("타일 1장만으로는 새 세트를 만들 수 없습니다. 다른 세트에 붙이거나 내 패의 타일과 조합하세요!");
+                return;
+            }
 
-            localTableSets.push(playedTiles);
-            selectedTiles = [];
+            if (selectedTiles.length > 0) {
+                if (selectedTiles.length < 3) {
+                    showToast("새로운 세트를 내놓으려면 최소 3장 이상의 타일을 선택해야 합니다!");
+                    return;
+                }
 
-            showToast("테이블에 새로운 세트 묶음을 만들어 냈습니다!");
-            renderRack();
-            renderTable();
+                const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
+                localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+
+                localTableSets.push(playedTiles);
+                selectedTiles = [];
+
+                showToast("공유 테이블에 새로운 세트 타일을 내놓았습니다!");
+                renderRack();
+                renderTable();
+            }
         };
+    }
+
+    // 내 거치대 선택 타일들을 특정 세트에 덧붙이기
+    function appendSelectedRackTilesToSet(targetSetIndex) {
+        const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
+        localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+
+        localTableSets[targetSetIndex] = [...localTableSets[targetSetIndex], ...playedTiles];
+        selectedTiles = [];
+
+        showToast("테이블의 기존 세트에 타일을 덧붙였습니다!");
+        renderRack();
+        renderTable();
+    }
+
+    // 떼어낸 테이블 타일을 다른 세트로 이동
+    function moveDetachedTileToSet(targetSetIndex) {
+        if (!selectedTableTile) return;
+        const { setIndex, tileIndex, tile } = selectedTableTile;
+
+        // 원본 세트에서 제거
+        localTableSets[setIndex].splice(tileIndex, 1);
+        // 빈 세트가 되면 세트 삭제
+        if (localTableSets[setIndex].length === 0) {
+            localTableSets.splice(setIndex, 1);
+            if (targetSetIndex > setIndex) targetSetIndex--;
+        }
+
+        // 대상 세트에 추가
+        localTableSets[targetSetIndex].push(tile);
+        selectedTableTile = null;
+
+        showToast("타일을 성공적으로 떼어내어 다른 세트에 붙였습니다!");
+        renderRack();
+        renderTable();
     }
 
     function renderPlayers() {
@@ -509,13 +595,24 @@
             };
         }
 
-        // 턴 제출 및 드로우 버튼
         if (btnSubmitTurn) {
             btnSubmitTurn.onclick = () => {
                 if (myPlayerId !== roomState?.current_turn_player_id) {
                     showToast("내 턴일 때만 턴을 완료할 수 있습니다!");
                     return;
                 }
+
+                if (selectedTiles.length > 0) {
+                    if (selectedTiles.length < 3) {
+                        showToast("새 세트를 내놓으려면 최소 3장 이상의 타일을 선택해야 합니다!");
+                        return;
+                    }
+                    const playedTiles = localRack.filter(t => selectedTiles.includes(t.id));
+                    localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+                    localTableSets.push(playedTiles);
+                    selectedTiles = [];
+                }
+
                 sendMessage({ type: 'SUBMIT_TURN', table_sets: localTableSets, rack: localRack });
             };
         }
