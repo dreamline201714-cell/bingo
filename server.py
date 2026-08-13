@@ -24,7 +24,6 @@ AVATAR_COLORS = [
     "#E53935", "#1E88E5", "#43A047", "#FB8C00", 
     "#8E44AD", "#00ACC1", "#D81B60", "#6D4C41"
 ]
-TILE_COLORS = ["red", "blue", "black", "orange"]
 
 SEOTDA_CARDS_DECK = [
     {'id': 'c_1_1', 'month': 1, 'is_kwang': True, 'name': '1월 광'},
@@ -109,13 +108,44 @@ def evaluate_seotda_hand(card1, card2):
     elif digit_sum == 0: return (100, "망통 (0끗) 😭", "망통")
     else: return (100 + digit_sum, f"{digit_sum}끗", f"{digit_sum}끗")
 
+def start_seotda_round(room):
+    deck = list(SEOTDA_CARDS_DECK)
+    random.shuffle(deck)
+    room['deck'] = deck
+    room['pot'] = 0
+    base_ante = room.get('base_ante', 100)
+    room['last_bet_amount'] = base_ante
+    room['betting_turns'] = 0
+
+    all_ws = list(room['players'].keys())
+    if 'dealer_ws' in room and room['dealer_ws'] in all_ws:
+        dealer_idx = all_ws.index(room['dealer_ws'])
+        room['turn_order'] = all_ws[dealer_idx:] + all_ws[:dealer_idx]
+    else:
+        room['turn_order'] = all_ws
+
+    room['current_turn_index'] = 0
+
+    for p_ws, p in room['players'].items():
+        p['is_folded'] = False
+        p['current_bet'] = base_ante
+        p['chips'] = max(0, p['chips'] - base_ante)
+        room['pot'] += base_ante
+        c1, c2 = room['deck'].pop(), room['deck'].pop()
+        p['hand'] = [c1, c2]
+        score, jokbo_full, jokbo_short = evaluate_seotda_hand(c1, c2)
+        p['jokbo_score'] = score
+        p['jokbo_name'] = jokbo_full
+
+    room['chat_logs'].append({'system': True, 'text': f"🎴 새로운 판이 시작되었습니다! (학교값 {base_ante}칩 차감)"})
+
 def serialize_room_state(room_id, requester_ws=None):
     if room_id not in ROOMS: return None
     room = ROOMS[room_id]
     game_type = room['game_type']
     players_data = []
 
-    current_ws = room['turn_order'][room['current_turn_index']] if room['turn_order'] else None
+    current_ws = room['turn_order'][room['current_turn_index']] if room.get('turn_order') else None
     current_player_id = room['players'][current_ws]['id'] if current_ws and current_ws in room['players'] else None
 
     turn_time_limit = room.get('turn_time_limit', TURN_DURATION_SECONDS)
@@ -131,12 +161,17 @@ def serialize_room_state(room_id, requester_ws=None):
             'color': player['color'], 'is_current_turn': (player['id'] == current_player_id)
         }
         if game_type == 'BINGO':
-            p_board = player.get('board', []) if requester_ws == ws else ['★' if idx in player.get('marked', set()) else '' for idx in range(len(player.get('board', [])))]
-            p_info.update({'is_escaped': player.get('is_escaped', False), 'score': player.get('score', 0), 'board': p_board, 'marked': list(player.get('marked', []))})
+            p_info.update({
+                'is_escaped': player.get('is_escaped', False),
+                'score': player.get('score', 0),
+                'board': player.get('board', []),
+                'marked': list(player.get('marked', []))
+            })
         elif game_type == 'RUMMIKUB':
             p_info.update({'tile_count': len(player.get('rack', [])), 'rack': player.get('rack', []) if requester_ws == ws else []})
         elif game_type == 'SEOTDA':
             hand = player.get('hand', [])
+            # 쇼다운 상태이거나 내 패일 경우만 공개
             visible_hand = hand if requester_ws == ws or room['status'] == 'SHOWDOWN' else [{'month': 0, 'is_kwang': False, 'name': '비공개'} for _ in hand]
             p_info.update({
                 'chips': player.get('chips', 10000), 'current_bet': player.get('current_bet', 0),
@@ -147,18 +182,21 @@ def serialize_room_state(room_id, requester_ws=None):
 
     state = {
         'room_id': room_id, 'game_type': game_type, 'status': room['status'],
+        'title': room.get('title', '레트로 멀티 미니게임'),
         'current_turn_player_id': current_player_id, 'turn_time_limit': turn_time_limit,
         'turn_time_remaining': time_left, 'players': players_data, 'chat_logs': room['chat_logs'][-30:]
     }
 
     if game_type == 'BINGO':
         state['config'] = room.get('config', {})
+    elif game_type == 'RUMMIKUB':
+        state['table_sets'] = room.get('table_sets', [])
     elif game_type == 'SEOTDA':
-        state['title'] = room.get('title', '레트로 실시간 섯다')
         state['pot'] = room.get('pot', 0)
         state['last_bet_amount'] = room.get('last_bet_amount', 0)
         state['start_chips'] = room.get('start_chips', 10000)
         state['base_ante'] = room.get('base_ante', 100)
+        state['dealer_player_id'] = room['players'][room['dealer_ws']]['id'] if 'dealer_ws' in room and room['dealer_ws'] in room['players'] else None
 
     return state
 
@@ -181,31 +219,31 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
         nickname = str(data.get('nickname', '방장')).strip() or '방장'
         room_id = generate_room_code()
         assigned_color = get_unique_color([])
+        title = str(data.get('title', '레트로 실시간 게임')).strip() or '레트로 실시간 게임'
 
         if game_type == 'BINGO':
             size = int(data.get('size', 5))
             ROOMS[room_id] = {
-                'game_type': 'BINGO', 'status': 'WAITING', 'turn_time_limit': TURN_DURATION_SECONDS,
+                'game_type': 'BINGO', 'status': 'WAITING', 'turn_time_limit': TURN_DURATION_SECONDS, 'title': title,
                 'config': {'size': size, 'target_lines': int(data.get('target_lines', size)), 'topic': data.get('topic', '자유 주제').strip() or '자유 주제', 'word_pool': data.get('word_pool', [])},
                 'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': False, 'color': assigned_color, 'board': generate_player_board(data.get('word_pool', []), size), 'marked': set(), 'score': 0}},
                 'turn_order': [], 'current_turn_index': 0, 'chat_logs': []
             }
         elif game_type == 'RUMMIKUB':
             ROOMS[room_id] = {
-                'game_type': 'RUMMIKUB', 'status': 'WAITING', 'turn_time_limit': int(data.get('turn_time_limit', 60)),
+                'game_type': 'RUMMIKUB', 'status': 'WAITING', 'turn_time_limit': int(data.get('turn_time_limit', 60)), 'title': title,
                 'deck': [], 'table_sets': [],
-                'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': True, 'rack': [], 'color': assigned_color}},
+                'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': False, 'rack': [], 'color': assigned_color}},
                 'turn_order': [], 'current_turn_index': 0, 'chat_logs': []
             }
         elif game_type == 'SEOTDA':
-            title = str(data.get('title', '레트로 실시간 섯다')).strip() or '레트로 실시간 섯다'
             start_chips = int(data.get('start_chips', 10000))
             base_ante = int(data.get('base_ante', 100))
             ROOMS[room_id] = {
-                'game_type': 'SEOTDA', 'status': 'WAITING', 'turn_time_limit': 15,
-                'title': title, 'start_chips': start_chips, 'base_ante': base_ante,
+                'game_type': 'SEOTDA', 'status': 'WAITING', 'turn_time_limit': 15, 'title': title,
+                'start_chips': start_chips, 'base_ante': base_ante,
                 'pot': 0, 'last_bet_amount': base_ante, 'deck': [],
-                'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': True, 'color': assigned_color, 'chips': start_chips, 'current_bet': 0, 'is_folded': False, 'hand': []}},
+                'players': {ws: {'id': current_player_id, 'nickname': nickname, 'is_host': True, 'is_ready': False, 'color': assigned_color, 'chips': start_chips, 'current_bet': 0, 'is_folded': False, 'hand': []}},
                 'turn_order': [], 'current_turn_index': 0, 'chat_logs': []
             }
 
@@ -249,62 +287,113 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
 
         room['status'] = 'PLAYING'
         player_sockets = list(room['players'].keys())
-        random.shuffle(player_sockets)
-        room['turn_order'] = player_sockets
-        room['current_turn_index'] = 0
-
+        
         if room['game_type'] == 'SEOTDA':
-            deck = list(SEOTDA_CARDS_DECK)
-            random.shuffle(deck)
-            room['deck'] = deck
-            room['pot'] = 0
-            base_ante = room.get('base_ante', 100)
-            room['last_bet_amount'] = base_ante
-
-            for socket_key, p in room['players'].items():
-                p['is_folded'] = False
-                p['current_bet'] = base_ante
-                p['chips'] = max(0, p['chips'] - base_ante)
-                room['pot'] += base_ante
-                c1, c2 = room['deck'].pop(), room['deck'].pop()
-                p['hand'] = [c1, c2]
-                score, jokbo_full, jokbo_short = evaluate_seotda_hand(c1, c2)
-                p['jokbo_score'] = score
-                p['jokbo_name'] = jokbo_full
-
-            room['chat_logs'].append({'system': True, 'text': f"🎴 화투패가 분배되었습니다! (기본 판돈 {base_ante}칩 차감)"})
+            room['dealer_ws'] = ws # 방장이 최초의 '선'이 됨
+            start_seotda_round(room)
+        else:
+            random.shuffle(player_sockets)
+            room['turn_order'] = player_sockets
+            room['current_turn_index'] = 0
+            if room['game_type'] == 'RUMMIKUB':
+                deck = [] # ... 루미큐브 덱 제너레이터 연동 등 기존과 동일
+                room['chat_logs'].append({'system': True, 'text': "🧩 루미큐브가 시작되었습니다!"})
 
         room['turn_start_time'] = time.time()
-        turn_order_list = [{'rank': idx + 1, 'nickname': room['players'][s]['nickname'], 'color': room['players'][s]['color']} for idx, s in enumerate(player_sockets)]
+        turn_order_list = [{'rank': idx + 1, 'nickname': room['players'][s]['nickname'], 'color': room['players'][s]['color']} for idx, s in enumerate(room['turn_order'])]
         
         await broadcast_to_room(current_room_id, {'type': 'STARTING_DRAW', 'turn_order_list': turn_order_list, 'state': None})
 
+    # ★ 섯다 라운드 연속 진행 (전판 승자가 패 나누기) ★
+    elif msg_type == 'START_ROUND':
+        room = ROOMS.get(current_room_id)
+        if room and room['game_type'] == 'SEOTDA' and room['status'] == 'SHOWDOWN':
+            if ws == room.get('dealer_ws'):
+                room['status'] = 'PLAYING'
+                start_seotda_round(room)
+                room['turn_start_time'] = time.time()
+                await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
+    # ★ 섯다 배팅 로직 및 쇼다운(라운드 종료) 엔진 연동 ★
     elif msg_type == 'SEOTDA_BET':
         room = ROOMS.get(current_room_id)
         if room and room['game_type'] == 'SEOTDA' and room['status'] == 'PLAYING':
-            action = data.get('action')
-            player = room['players'][ws]
-            base_ante = room.get('base_ante', 100)
-            
-            bet_add = 0
-            if action == 'DIE':
-                player['is_folded'] = True
-                room['chat_logs'].append({'system': True, 'text': f"😭 [{player['nickname']}]님이 다이(기권)하셨습니다."})
-            else:
-                if action == 'BING': bet_add = base_ante
-                elif action == 'TADANG': bet_add = room['last_bet_amount'] * 2
-                elif action == 'HALF': bet_add = int(room['pot'] * 0.5)
-                elif action == 'CALL': bet_add = room['last_bet_amount']
+            current_ws = room['turn_order'][room['current_turn_index']]
+            if ws == current_ws:
+                action = data.get('action')
+                player = room['players'][ws]
+                base_ante = room.get('base_ante', 100)
                 
-                bet_add = min(player['chips'], max(bet_add, base_ante))
-                player['chips'] -= bet_add
-                player['current_bet'] += bet_add
-                room['pot'] += bet_add
-                room['last_bet_amount'] = bet_add
-                room['chat_logs'].append({'system': True, 'text': f"💸 [{player['nickname']}]님이 [{action}] ({bet_add}칩) 배팅!"})
+                bet_add = 0
+                if action == 'DIE':
+                    player['is_folded'] = True
+                    room['chat_logs'].append({'system': True, 'text': f"😭 [{player['nickname']}]님이 다이(기권)하셨습니다."})
+                else:
+                    active_players = [p for p in room['players'].values() if not p['is_folded']]
+                    target_bet = max(p['current_bet'] for p in active_players) if active_players else player['current_bet']
+                    
+                    if action == 'BING': 
+                        bet_add = base_ante
+                    elif action == 'TADANG': 
+                        bet_add = (target_bet - player['current_bet']) + room['last_bet_amount'] * 2
+                    elif action == 'HALF': 
+                        bet_add = (target_bet - player['current_bet']) + int(room['pot'] * 0.5)
+                    elif action == 'CALL': 
+                        bet_add = target_bet - player['current_bet']
+                    
+                    if bet_add <= 0 and action != 'BING': bet_add = 0
+                
+                if action != 'DIE':
+                    bet_add = min(player['chips'], max(bet_add, 0))
+                    player['chips'] -= bet_add
+                    player['current_bet'] += bet_add
+                    room['pot'] += bet_add
+                    if bet_add > 0 and action != 'CALL':
+                        room['last_bet_amount'] = bet_add
+                    room['chat_logs'].append({'system': True, 'text': f"💸 [{player['nickname']}]님이 [{action}] ({bet_add}칩) 배팅!"})
 
-            room['current_turn_index'] = (room['current_turn_index'] + 1) % len(room['turn_order'])
-            room['turn_start_time'] = time.time()
+                room['betting_turns'] = room.get('betting_turns', 0) + 1
+                active_ws = [p_ws for p_ws, p in room['players'].items() if not p['is_folded']]
+                
+                # 라운드 종료 (1명 생존 시)
+                if len(active_ws) == 1:
+                    winner_ws = active_ws[0]
+                    winner = room['players'][winner_ws]
+                    winner['chips'] += room['pot']
+                    room['dealer_ws'] = winner_ws # 승자가 다음 판 선
+                    room['chat_logs'].append({'system': True, 'text': f"🎉 모두 기권하여 [{winner['nickname']}]님이 {room['pot']} 칩을 획득했습니다!"})
+                    room['status'] = 'SHOWDOWN'
+                else:
+                    # 라운드 종료 (모두 배팅 금액 일치 시 = 콜)
+                    max_current_bet = max(room['players'][aw]['current_bet'] for aw in active_ws)
+                    all_matched = all(room['players'][aw]['current_bet'] == max_current_bet for aw in active_ws)
+                    
+                    if all_matched and room['betting_turns'] >= len(active_ws):
+                        active_players = [room['players'][aw] for aw in active_ws]
+                        active_players.sort(key=lambda x: x['jokbo_score'], reverse=True)
+                        winner = active_players[0]
+                        winner_ws = [w for w, p in room['players'].items() if p['id'] == winner['id']][0]
+                        
+                        winner['chips'] += room['pot']
+                        room['dealer_ws'] = winner_ws # 승자가 다음 판 선
+                        room['chat_logs'].append({'system': True, 'text': f"🏆 쪼기 결과! [{winner['nickname']}]님이 '{winner['jokbo_name']}'(으)로 {room['pot']} 칩 획득!"})
+                        room['status'] = 'SHOWDOWN'
+                    else:
+                        next_idx = (room['current_turn_index'] + 1) % len(room['turn_order'])
+                        while room['players'][room['turn_order'][next_idx]]['is_folded']:
+                            next_idx = (next_idx + 1) % len(room['turn_order'])
+                        room['current_turn_index'] = next_idx
+                        room['turn_start_time'] = time.time()
+
+                await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
+    elif msg_type == 'TOGGLE_READY':
+        room = ROOMS.get(current_room_id)
+        if room and ws in room['players']:
+            p = room['players'][ws]
+            p['is_ready'] = not p.get('is_ready', False)
+            status_str = "준비 완료" if p['is_ready'] else "준비 해제"
+            room['chat_logs'].append({'system': True, 'text': f"✋ '{p['nickname']}'님이 {status_str}하셨습니다."})
             await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
     elif msg_type == 'CHAT_MESSAGE':

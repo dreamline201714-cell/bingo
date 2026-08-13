@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_seotda.css?v=20260813_v4">
+    <link rel="stylesheet" href="style_seotda.css?v=20260813_v9">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -13,7 +13,6 @@
     <canvas id="confetti-canvas"></canvas>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- 모바일 전용 대화 플로팅 버튼 (FAB) -->
     <button class="mobile-fab" id="mobile-fab-btn">
         💬 대화 / 목록 (<span id="mobile-player-count">0</span>명)
     </button>
@@ -146,10 +145,17 @@
                 </div>
             </div>
 
-            <!-- 방장 컨트롤 박스 -->
             <div id="host-controls" class="host-controls-box" style="display: none;">
                 <div style="text-align: right;">
                     <button class="start-game-btn" id="btn-host-start">게임 시작하기!</button>
+                </div>
+            </div>
+
+            <!-- ★ 승자 (선) 전용 새 라운드 시작 컨트롤 -->
+            <div id="dealer-controls" class="host-controls-box" style="display: none;">
+                <div style="text-align: right;">
+                    <span style="font-size:0.85rem; font-weight:bold; color:var(--accent); margin-right:10px;">👑 이번 판 선(승자)</span>
+                    <button class="start-game-btn" id="btn-dealer-start">다음 판 패 섞고 나누기</button>
                 </div>
             </div>
 
@@ -232,16 +238,6 @@
         </section>
     </main>
 
-    <!-- ★ 내 턴 도달 시 안내 모달 팝업 ★ -->
-    <div class="modal-overlay" id="my-turn-modal">
-        <div class="modal-box" style="text-align: center; max-width: 380px;">
-            <div style="font-size: 3rem; margin-bottom: 8px;">🃏</div>
-            <h3 style="font-size: 1.3rem; margin-bottom: 8px; color: var(--accent);">당신의 배팅 턴입니다!</h3>
-            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">하단에서 배팅 액션을 선택해주세요.</p>
-            <button class="primary-btn" id="btn-my-turn-confirm" style="margin: 0;">확인 및 배팅하기</button>
-        </div>
-    </div>
-
     <!-- 🎲 선 제비뽑기 모달 -->
     <div class="modal-overlay" id="draw-modal">
         <div class="modal-box" style="text-align: center;">
@@ -251,36 +247,98 @@
         </div>
     </div>
 
-    <!-- 도움말 모달 -->
+    <!-- 모바일 상단 고정 헤더 적용 풍성한 섯다 규칙 & 상세 족보 모달 -->
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
                 <h3>🃏 레트로 섯다 규칙 &amp; 족보 안내</h3>
                 <button class="modal-close" id="help-modal-close">&times;</button>
             </div>
+            
             <div class="modal-body-scroll help-modal-body">
                 <div class="help-section">
-                    <div class="help-section-title">📋 진행 순서</div>
+                    <div class="help-section-title">📋 게임 진행 순서</div>
                     <div class="help-step-list">
                         <div class="help-step">
                             <div class="help-step-num">1</div>
-                            <div class="help-step-text"><strong>기본 판돈 차감</strong><br>게임 시작 시 기본 판돈이 차감되어 중앙 판돈(Pot)에 모입니다.</div>
+                            <div class="help-step-text">
+                                <strong>기본 판돈(앤티) 차감</strong><br>
+                                게임 시작 시 참가자 전원에게서 기본 판돈이 자동 차감되어 중앙 판돈(Pot)에 모입니다.
+                            </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">2</div>
-                            <div class="help-step-text"><strong>화투패 2장 분배</strong><br>2장의 패가 지급되며 내 족보가 자동 계산됩니다.</div>
+                            <div class="help-step-text">
+                                <strong>화투패 2장 비밀 지급</strong><br>
+                                각 참가자에게 2장의 패가 비밀리에 지급되며 나만 볼 수 있는 족보가 자동 계산됩니다.
+                            </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">3</div>
-                            <div class="help-step-text"><strong>배팅 및 블러핑</strong><br>내 턴에 배팅을 하거나 다이(기권)합니다.</div>
+                            <div class="help-step-text">
+                                <strong>배팅 및 퀵 블러핑</strong><br>
+                                내 턴에 삥·따당·하프·콜·다이 중 하나를 선택해 칩을 투척하거나 기권하며, 퀵 도발 멘트로 심리전을 겁니다.
+                            </div>
+                        </div>
+                        <div class="help-step">
+                            <div class="help-step-num">4</div>
+                            <div class="help-step-text">
+                                <strong>패 공개 ➔ 판돈 싹쓸이!</strong><br>
+                                끝까지 남은 참가자 중 가장 높은 족보를 가진 우승자가 중앙의 모든 판돈을 싹쓸이합니다!
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">🏆 족보 순위 (상위 ➔ 하위)</div>
+                    <div class="help-mode-grid" style="grid-template-columns: 1fr;">
+                        <div class="help-mode-card winner" style="text-align:left;">
+                            <div style="font-weight:bold; color:#aa0000; margin-bottom:4px;">1. 광땡 (최고 족보)</div>
+                            <div style="font-size:0.8rem; line-height:1.5;">
+                                • <strong>삼팔광땡 (3·8)</strong>: 무적의 절대 1등 족보!<br>
+                                • <strong>일팔광땡 (1·8) / 일삼광땡 (1·3)</strong>: 삼팔광땡 바로 밑 족보.
+                            </div>
+                        </div>
+
+                        <div class="help-mode-card" style="text-align:left; border-color:#ff9800;">
+                            <div style="font-weight:bold; color:#ff9800; margin-bottom:4px;">2. 땡 (10장땡 ~ 1일땡)</div>
+                            <div style="font-size:0.8rem; line-height:1.5;">
+                                같은 월의 패 2장이 조합된 패.<br>
+                                • 장땡(10·10) > 9땡 > 8땡 ... > 1땡(1·1)
+                            </div>
+                        </div>
+
+                        <div class="help-mode-card" style="text-align:left; border-color:#2196f3;">
+                            <div style="font-weight:bold; color:#2196f3; margin-bottom:4px;">3. 특수 알짜패</div>
+                            <div style="font-size:0.8rem; line-height:1.5;">
+                                • <strong>알통 (1·2)</strong> > <strong>독사 (1·4)</strong> > <strong>구빙 (4·9)</strong> > <strong>장빙 (6·10)</strong> > <strong>장사 (4·10)</strong> > <strong>세륙 (4·6)</strong>
+                            </div>
+                        </div>
+
+                        <div class="help-mode-card" style="text-align:left; border-color:#666;">
+                            <div style="font-weight:bold; color:#666; margin-bottom:4px;">4. 끗 (합의 일의 자릿수)</div>
+                            <div style="font-size:0.8rem; line-height:1.5;">
+                                • <strong>갑오 (9끗)</strong> > 8끗 > ... > 1끗 > <strong>망통 (0끗)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">💸 배팅 버튼 용어 안내</div>
+                    <ul class="help-tip-list">
+                        <li><strong>삥</strong>: 기본 판돈만큼 배팅</li>
+                        <li><strong>따당</strong>: 앞 사람이 배팅한 금액의 2배를 배팅</li>
+                        <li><strong>하프</strong>: 현재 중앙에 모인 총 판돈의 50%를 추가 배팅</li>
+                        <li><strong>콜</strong>: 앞 사람이 판 돈만큼만 맞춰내고 계속 진행</li>
+                        <li><strong>다이</strong>: 이번 판을 포기하고 기권</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- QR 코드 모달 -->
     <div class="modal-overlay" id="qr-modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -293,6 +351,6 @@
         </div>
     </div>
 
-    <script src="app_seotda.js?v=20260813_v4"></script>
+    <script src="app_seotda.js?v=20260813_v10"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /**
- * Office Bingo Live Client Application Logic
+ * Office Bingo Live Client Application Logic - Turn Player & Timer Fix
  */
 
 (function () {
@@ -9,12 +9,16 @@
     let isHost = false;
     let soundEnabled = true;
     let currentTheme = 'light';
+    let previousTurnPlayerId = null;
 
     let roomState = null;
     let selectedSize = 5;
     let selectedGameMode = 'WINNER';
     let spectatingPlayerId = null;
     let configModalSelectedSize = 5;
+
+    let timerInterval = null;
+    let timerSecondsLeft = 15;
 
     function initStealthMode() {
         const btnStealthToggle = document.getElementById('btn-stealth-toggle');
@@ -29,9 +33,7 @@
                 document.body.classList.toggle('excel-stealth-mode');
                 const isStealth = document.body.classList.contains('excel-stealth-mode');
 
-                if (stealthOpacityBox) {
-                    stealthOpacityBox.style.display = isStealth ? 'flex' : 'none';
-                }
+                if (stealthOpacityBox) stealthOpacityBox.style.display = isStealth ? 'flex' : 'none';
 
                 if (isStealth) {
                     if (brandIconEl) brandIconEl.innerText = '📊';
@@ -52,21 +54,16 @@
         }
     }
 
-    // ★ 모바일 바텀시트 슬라이딩 제어 스크립트 ★
     function initMobileSidebar() {
         const mobileFabBtn = document.getElementById('mobile-fab-btn');
         const mobileSidebar = document.getElementById('mobile-sidebar');
         const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
 
         if (mobileFabBtn && mobileSidebar) {
-            mobileFabBtn.onclick = () => {
-                mobileSidebar.classList.add('active');
-            };
+            mobileFabBtn.onclick = () => mobileSidebar.classList.add('active');
         }
         if (mobileSidebarClose && mobileSidebar) {
-            mobileSidebarClose.onclick = () => {
-                mobileSidebar.classList.remove('active');
-            };
+            mobileSidebarClose.onclick = () => mobileSidebar.classList.remove('active');
         }
     }
 
@@ -77,12 +74,8 @@
         const soundToggleBtn = document.getElementById('sound-toggle-btn');
         const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
-        if (btnHelp && helpModal) {
-            btnHelp.onclick = () => helpModal.classList.add('active');
-        }
-        if (helpModalClose && helpModal) {
-            helpModalClose.onclick = () => helpModal.classList.remove('active');
-        }
+        if (btnHelp && helpModal) btnHelp.onclick = () => helpModal.classList.add('active');
+        if (helpModalClose && helpModal) helpModalClose.onclick = () => helpModal.classList.remove('active');
 
         if (soundToggleBtn) {
             soundToggleBtn.onclick = () => {
@@ -108,53 +101,37 @@
 
         const presets = (typeof BINGO_PRESETS !== 'undefined' && Array.isArray(BINGO_PRESETS))
             ? BINGO_PRESETS
-            : [{ id: "custom", title: "자유 주제", words: [] }];
+            : [{ id: "custom", title: "✨ 자유 주제 (직접 입력)", words: [] }];
 
-        if (createGroup) {
-            createGroup.innerHTML = '';
+        function buildChips(container, isConfig) {
+            if (!container) return;
+            container.innerHTML = '';
             presets.forEach((preset, index) => {
                 const chip = document.createElement('div');
                 chip.className = 'preset-chip' + (index === 0 ? ' active' : '');
                 chip.innerText = preset.title;
 
-                chip.addEventListener('click', () => {
-                    createGroup.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+                chip.onclick = () => {
+                    container.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
                     chip.classList.add('active');
 
+                    const topicInput = document.getElementById(isConfig ? 'config-topic-input' : 'create-topic');
+                    const wordsInput = document.getElementById(isConfig ? 'config-words-input' : 'create-words');
+
                     if (preset.id === 'custom') {
-                        if (createTopicInput) createTopicInput.value = '자유 주제';
-                        if (createWordsInput) createWordsInput.value = '';
+                        if (topicInput) topicInput.value = '자유 주제';
+                        if (wordsInput) wordsInput.value = '';
                     } else {
-                        if (createTopicInput) createTopicInput.value = preset.title.replace(/^[^\s]+\s+/, '');
-                        if (createWordsInput) createWordsInput.value = (preset.words || []).join('\n');
+                        if (topicInput) topicInput.value = preset.title.replace(/^[^\s]+\s+/, '');
+                        if (wordsInput) wordsInput.value = (preset.words || []).join('\n');
                     }
-                });
-                createGroup.appendChild(chip);
+                };
+                container.appendChild(chip);
             });
         }
 
-        if (configGroup) {
-            configGroup.innerHTML = '';
-            presets.forEach((preset, index) => {
-                const chip = document.createElement('div');
-                chip.className = 'preset-chip' + (index === 0 ? ' active' : '');
-                chip.innerText = preset.title;
-
-                chip.addEventListener('click', () => {
-                    configGroup.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
-                    chip.classList.add('active');
-
-                    if (preset.id === 'custom') {
-                        if (configTopicInput) configTopicInput.value = '자유 주제';
-                        if (configWordsInput) configWordsInput.value = '';
-                    } else {
-                        if (configTopicInput) configTopicInput.value = preset.title.replace(/^[^\s]+\s+/, '');
-                        if (configWordsInput) configWordsInput.value = (preset.words || []).join('\n');
-                    }
-                });
-                configGroup.appendChild(chip);
-            });
-        }
+        buildChips(createGroup, false);
+        buildChips(configGroup, true);
     }
 
     function updateTargetLinesOptions(size, selectEl) {
@@ -180,88 +157,12 @@
         setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 2500);
     }
 
-    const statusDot = document.getElementById('status-dot');
-    const statusText = document.getElementById('status-text');
-
-    const lobbySection = document.getElementById('lobby-section');
-    const arenaSection = document.getElementById('arena-section');
-
-    const tabBtnCreate = document.getElementById('tab-btn-create');
-    const tabBtnJoin = document.getElementById('tab-btn-join');
-    const createRoomForm = document.getElementById('create-room-form');
-    const joinRoomForm = document.getElementById('join-room-form');
-
-    const createNicknameInput = document.getElementById('create-nickname');
-    const createTopicInput = document.getElementById('create-topic');
-    const createWordsInput = document.getElementById('create-words');
-    const createTargetLinesSelect = document.getElementById('create-target-lines');
-
-    const configTopicInput = document.getElementById('config-topic-input');
-    const configWordsInput = document.getElementById('config-words-input');
-    const configTargetLinesSelect = document.getElementById('config-target-lines');
-
-    const joinNicknameInput = document.getElementById('join-nickname');
-    const joinRoomCodeInput = document.getElementById('join-room-code');
-
-    const displayTopicTitle = document.getElementById('display-topic-title');
-    const displayGridInfo = document.getElementById('display-grid-info');
-    const displayRoomCode = document.getElementById('display-room-code');
-    const roomStateBadge = document.getElementById('room-state-badge');
-    const btnCopyLink = document.getElementById('btn-copy-link');
-    const btnShowQr = document.getElementById('btn-show-qr');
-
-    const turnBanner = document.getElementById('turn-banner');
-
-    const hostControls = document.getElementById('host-controls');
-    const btnHostStart = document.getElementById('btn-host-start');
-    const btnHostReset = document.getElementById('btn-host-reset');
-    const btnHostConfig = document.getElementById('btn-host-config');
-
-    const configModal = document.getElementById('config-modal');
-    const configModalClose = document.getElementById('config-modal-close');
-    const btnConfigSave = document.getElementById('btn-config-save');
-    const btnConfigCancel = document.getElementById('btn-config-cancel');
-
-    const spectateModal = document.getElementById('spectate-modal');
-    const spectateModalClose = document.getElementById('spectate-modal-close');
-    const spectateModalTitle = document.getElementById('spectate-modal-title');
-    const spectateModalScore = document.getElementById('spectate-modal-score');
-    const spectateGrid = document.getElementById('spectate-grid');
-
-    const resetOptionModal = document.getElementById('reset-option-modal');
-    const btnResetKeep = document.getElementById('btn-reset-keep');
-    const btnResetShuffle = document.getElementById('btn-reset-shuffle');
-    const btnResetCancel = document.getElementById('btn-reset-cancel');
-
-    const qrModal = document.getElementById('qr-modal');
-    const qrModalClose = document.getElementById('qr-modal-close');
-    const qrCodeContainer = document.getElementById('qrcode');
-
-    const bingoBoardGrid = document.getElementById('bingo-board-grid');
-    const footerWaitingControls = document.getElementById('footer-waiting-controls');
-    const footerPlayingControls = document.getElementById('footer-playing-controls');
-
-    const btnToggleReady = document.getElementById('btn-toggle-ready');
-    const btnAutoFill = document.getElementById('btn-auto-fill');
-    const btnClearBoard = document.getElementById('btn-clear-board');
-
-    const topicWordsChips = document.getElementById('topic-words-chips');
-    const panelPlayers = document.getElementById('panel-players');
-    const playerCountSpan = document.getElementById('player-count');
-    const mobilePlayerCount = document.getElementById('mobile-player-count');
-    const chatMessagesBox = document.getElementById('chat-messages');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-
-    const stabChat = document.getElementById('stab-chat');
-    const stabCalls = document.getElementById('stab-calls');
-    const panelChat = document.getElementById('panel-chat');
-    const panelCalls = document.getElementById('panel-calls');
-
     function checkUrlQueryParams() {
         const urlParams = new URLSearchParams(window.location.search);
         const roomParam = urlParams.get('room');
         if (roomParam) {
+            const tabBtnJoin = document.getElementById('tab-btn-join');
+            const joinRoomCodeInput = document.getElementById('join-room-code');
             if (tabBtnJoin) tabBtnJoin.click();
             if (joinRoomCodeInput) joinRoomCodeInput.value = roomParam.toUpperCase();
         }
@@ -272,6 +173,8 @@
         socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
         socket.onopen = () => {
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
             if (statusText) statusText.innerText = '서버 연결됨';
             if (statusDot) statusDot.className = 'status-dot connected';
             checkUrlQueryParams();
@@ -282,6 +185,8 @@
         };
 
         socket.onclose = () => {
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
             if (statusText) statusText.innerText = '서버 연결 끊김';
             if (statusDot) statusDot.className = 'status-dot';
             setTimeout(connectNetwork, 2000);
@@ -291,7 +196,24 @@
     function sendMessage(msgDict) {
         if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify(msgDict));
+        } else {
+            showToast('서버 연결 중입니다. 잠시 후 다시 시도해주세요.');
         }
+    }
+
+    function showTurnOrderDrawModal(turnOrderList) {
+        const listContainer = document.getElementById('draw-result-list');
+        if (!listContainer) return;
+        listContainer.innerHTML = '';
+        if (turnOrderList) {
+            turnOrderList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                card.innerHTML = `<span>● ${escapeHtml(item.nickname)}</span><span>${item.rank}번째 턴 🎯</span>`;
+                listContainer.appendChild(card);
+            });
+        }
+        document.getElementById('draw-modal').classList.add('active');
     }
 
     function handleServerMessage(msg) {
@@ -301,9 +223,18 @@
                 myPlayerId = msg.player_id;
                 isHost = msg.is_host;
                 roomState = msg.state;
-                if (lobbySection) lobbySection.style.display = 'none';
-                if (arenaSection) arenaSection.style.display = 'block';
+                document.getElementById('lobby-section').style.display = 'none';
+                document.getElementById('arena-section').style.display = 'block';
                 updateArenaUI();
+                break;
+            case 'STARTING_DRAW':
+                showTurnOrderDrawModal(msg.turn_order_list);
+                setTimeout(() => {
+                    const drawModal = document.getElementById('draw-modal');
+                    if (drawModal) drawModal.classList.remove('active');
+                    roomState = msg.state;
+                    updateArenaUI();
+                }, 2500);
                 break;
             case 'ROOM_UPDATED':
                 roomState = msg.state;
@@ -322,11 +253,60 @@
         }
     }
 
+    function updateEmptyCellCount(myBoard, size) {
+        const total = size * size;
+        const filled = myBoard.filter(w => w && w.trim().length > 0).length;
+        const emptyCount = Math.max(0, total - filled);
+        
+        const countEl = document.getElementById('empty-cell-count');
+        if (countEl) countEl.innerText = `빈 칸: ${emptyCount}개`;
+        return emptyCount;
+    }
+
+    // ★ 15초 카운트다운 타이머 바 및 숫자 연동 ★
+    function startTurnTimer(secondsLeft, totalLimit) {
+        clearInterval(timerInterval);
+        timerSecondsLeft = secondsLeft;
+        updateTimerBar(totalLimit);
+
+        timerInterval = setInterval(() => {
+            timerSecondsLeft--;
+            if (timerSecondsLeft < 0) {
+                timerSecondsLeft = 0;
+                clearInterval(timerInterval);
+            }
+            updateTimerBar(totalLimit);
+        }, 1000);
+    }
+
+    function updateTimerBar(totalLimit) {
+        const timerNum = document.getElementById('turn-timer-num');
+        const timerFill = document.getElementById('turn-timer-fill');
+        if (timerNum) timerNum.innerText = timerSecondsLeft;
+        if (timerFill) {
+            const pct = Math.max(0, (timerSecondsLeft / (totalLimit || 15)) * 100);
+            timerFill.style.width = `${pct}%`;
+        }
+    }
+
     function updateArenaUI() {
         if (!roomState) return;
         const config = roomState.config;
         const status = roomState.status;
         const myPlayer = roomState.players.find(p => p.player_id === myPlayerId);
+
+        const displayTopicTitle = document.getElementById('display-topic-title');
+        const displayGridInfo = document.getElementById('display-grid-info');
+        const displayRoomCode = document.getElementById('display-room-code');
+        const roomStateBadge = document.getElementById('room-state-badge');
+        const footerWaitingControls = document.getElementById('footer-waiting-controls');
+        const footerPlayingControls = document.getElementById('footer-playing-controls');
+        const turnBanner = document.getElementById('turn-banner');
+        const hostControls = document.getElementById('host-controls');
+        const btnHostStart = document.getElementById('btn-host-start');
+        const btnToggleReady = document.getElementById('btn-toggle-ready');
+        const myLineCount = document.getElementById('my-line-count');
+        const turnPlayerBadge = document.getElementById('turn-player-badge');
 
         if (displayTopicTitle) displayTopicTitle.innerText = config.topic;
         if (displayGridInfo) displayGridInfo.innerText = `${config.size}x${config.size} 빙고 | 완성 목표: ${config.target_lines || config.size}줄`;
@@ -342,20 +322,43 @@
             if (footerWaitingControls) footerWaitingControls.style.display = 'none';
             if (footerPlayingControls) footerPlayingControls.style.display = 'flex';
             if (turnBanner) turnBanner.style.display = 'flex';
-        }
 
-        if (myPlayer && myPlayer.is_host) {
-            if (hostControls) hostControls.style.display = status === 'WAITING' ? 'block' : 'none';
-            if (btnHostStart) {
-                const allReady = roomState.players.every(p => p.is_ready);
-                btnHostStart.disabled = !allReady;
-                btnHostStart.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
+            // ★ 현재 턴 플레이어 닉네임 실시간 업데이트 (더미 '홍길동님' 제거) ★
+            const turnPlayer = roomState.players.find(p => p.player_id === roomState.current_turn_player_id);
+            if (turnPlayerBadge) {
+                const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
+                turnPlayerBadge.innerText = isMyTurn ? `내 턴입니다! (${myPlayer?.nickname})` : `${turnPlayer?.nickname || '참여자'}님 턴`;
             }
-        } else {
-            if (hostControls) hostControls.style.display = 'none';
+
+            // ★ 실시간 타이머 가동 ★
+            startTurnTimer(roomState.turn_time_remaining || roomState.turn_time_limit || 15, roomState.turn_time_limit || 15);
+
+            if (roomState.current_turn_player_id === myPlayerId && previousTurnPlayerId !== myPlayerId) {
+                showToast("🎯 당신의 턴입니다! 빙고 단어를 선택하세요!");
+            }
+            previousTurnPlayerId = roomState.current_turn_player_id;
         }
 
         if (myPlayer) {
+            updateEmptyCellCount(myPlayer.board, config.size);
+            if (myLineCount) myLineCount.innerText = `${myPlayer.score || 0} 줄`;
+
+            if (btnToggleReady) {
+                btnToggleReady.style.display = 'inline-block';
+                btnToggleReady.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
+            }
+
+            if (myPlayer.is_host) {
+                if (hostControls) hostControls.style.display = status === 'WAITING' ? 'block' : 'none';
+                if (btnHostStart) {
+                    const allReady = roomState.players.every(p => p.is_ready);
+                    btnHostStart.disabled = !allReady;
+                    btnHostStart.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
+                }
+            } else {
+                if (hostControls) hostControls.style.display = 'none';
+            }
+
             renderBingoBoard(myPlayer.board, myPlayer.marked, config.size, status, myPlayer.is_ready);
             renderTopicWordChips(myPlayer.board);
         }
@@ -364,6 +367,7 @@
     }
 
     function renderBingoBoard(board, markedIndices, size, status, isReady) {
+        const bingoBoardGrid = document.getElementById('bingo-board-grid');
         if (!bingoBoardGrid) return;
         bingoBoardGrid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
         bingoBoardGrid.innerHTML = '';
@@ -377,11 +381,20 @@
             cell.className = 'bingo-cell' + (isMarked ? ' marked' : '');
             cell.innerText = hasText ? text : `(${index + 1}번)`;
 
-            cell.addEventListener('click', () => {
-                if (roomState.status === 'PLAYING' && myPlayerId === roomState.current_turn_player_id && !isMarked && hasText) {
-                    sendMessage({ type: 'MARK_CELL', room_id: currentRoomId, cell_index: index, player_id: myPlayerId });
+            cell.onclick = () => {
+                if (status === 'WAITING') {
+                    const inputVal = prompt("빙고 칸에 넣을 단어를 입력하세요:", text || "");
+                    if (inputVal !== null) {
+                        const newBoard = [...board];
+                        newBoard[index] = inputVal.trim();
+                        sendMessage({ type: 'UPDATE_BOARD', room_id: currentRoomId, board: newBoard });
+                    }
+                } else if (status === 'PLAYING') {
+                    if (myPlayerId === roomState.current_turn_player_id && !isMarked && hasText) {
+                        sendMessage({ type: 'MARK_CELL', room_id: currentRoomId, cell_index: index, player_id: myPlayerId });
+                    }
                 }
-            });
+            };
             bingoBoardGrid.appendChild(cell);
         });
     }
@@ -389,12 +402,17 @@
     function openSpectateModal(playerId) {
         spectatingPlayerId = playerId;
         renderSpectateBoard(playerId);
+        const spectateModal = document.getElementById('spectate-modal');
         if (spectateModal) spectateModal.classList.add('active');
     }
 
     function renderSpectateBoard(playerId) {
         const player = roomState.players.find(p => p.player_id === playerId);
         if (!player) return;
+
+        const spectateModalTitle = document.getElementById('spectate-modal-title');
+        const spectateModalScore = document.getElementById('spectate-modal-score');
+        const spectateGrid = document.getElementById('spectate-grid');
 
         if (spectateModalTitle) spectateModalTitle.innerText = `${player.nickname}님의 실시간 관전 상태`;
         if (spectateModalScore) spectateModalScore.innerText = `현재 ${player.score}줄 완성 (목표: ${roomState.config.target_lines || roomState.config.size}줄)`;
@@ -425,28 +443,53 @@
     }
 
     function renderTopicWordChips(myBoard) {
+        const topicWordsChips = document.getElementById('topic-words-chips');
         if (!topicWordsChips) return;
         topicWordsChips.innerHTML = '';
         const wordPool = roomState.config.word_pool || [];
-        const usedSet = new Set(myBoard.map(w => w.trim()));
+        const usedSet = new Set(myBoard.map(w => (w || '').trim()));
 
         wordPool.forEach(word => {
             const chip = document.createElement('div');
-            const isUsed = usedSet.has(word.trim());
+            const isUsed = usedSet.has((word || '').trim());
             chip.className = 'topic-word-chip' + (isUsed ? ' used' : '');
             chip.innerText = word;
+
+            if (!isUsed && roomState.status === 'WAITING') {
+                chip.onclick = () => {
+                    const emptyIdx = myBoard.findIndex(w => !w || w.trim() === '');
+                    if (emptyIdx !== -1) {
+                        const newBoard = [...myBoard];
+                        newBoard[emptyIdx] = word;
+                        sendMessage({ type: 'UPDATE_BOARD', room_id: currentRoomId, board: newBoard });
+                    } else {
+                        showToast('더 이상 빈 칸이 없습니다!');
+                    }
+                };
+            }
             topicWordsChips.appendChild(chip);
         });
     }
 
     function renderPlayersRoster(status) {
+        const panelPlayers = document.getElementById('panel-players');
+        const playerCountSpan = document.getElementById('player-count');
+        const mobilePlayerCount = document.getElementById('mobile-player-count');
         if (!panelPlayers) return;
+
         panelPlayers.innerHTML = '';
         const playersList = roomState ? roomState.players : [];
         if (playerCountSpan) playerCountSpan.innerText = playersList.length;
         if (mobilePlayerCount) mobilePlayerCount.innerText = playersList.length;
 
         playersList.forEach(p => {
+            let statusHtml = '';
+            if (status === 'WAITING') {
+                statusHtml = p.is_ready ? '<span class="ready-tag ready">준비 완료</span>' : '<span class="ready-tag waiting">작성 중...</span>';
+            } else {
+                statusHtml = `<span style="font-size:0.75rem; font-weight:bold; color:var(--accent);">${p.score || 0}줄 완성</span>`;
+            }
+
             const card = document.createElement('div');
             card.className = 'player-card';
             card.innerHTML = `
@@ -455,17 +498,17 @@
                     <div class="player-name">${escapeHtml(p.nickname)} ${p.is_host ? '<span class="host-tag">방장</span>' : ''}</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:4px;">
-                    ${p.is_ready ? '<span class="ready-tag ready">준비 완료</span>' : '<span class="ready-tag waiting">작성 중...</span>'}
+                    ${statusHtml}
                     <button class="spectate-btn" data-pid="${p.player_id}">관전</button>
                 </div>
             `;
 
             const specBtn = card.querySelector('.spectate-btn');
             if (specBtn) {
-                specBtn.addEventListener('click', (e) => {
+                specBtn.onclick = (e) => {
                     e.stopPropagation();
                     openSpectateModal(p.player_id);
-                });
+                };
             }
 
             panelPlayers.appendChild(card);
@@ -473,6 +516,7 @@
     }
 
     function renderChatLogs() {
+        const chatMessagesBox = document.getElementById('chat-messages');
         if (!chatMessagesBox) return;
         chatMessagesBox.innerHTML = '';
         if (!roomState || !roomState.chat_logs) return;
@@ -488,160 +532,293 @@
 
     function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
-    if (stabChat && stabCalls) {
-        stabChat.onclick = () => {
-            stabChat.classList.add('active');
-            stabCalls.classList.remove('active');
-            if (panelChat) panelChat.style.display = 'flex';
-            if (panelCalls) panelCalls.style.display = 'none';
-        };
-
-        stabCalls.onclick = () => {
-            stabCalls.classList.add('active');
-            stabChat.classList.remove('active');
-            if (panelCalls) panelCalls.style.display = 'flex';
-            if (panelChat) panelChat.style.display = 'none';
-        };
-    }
-
-    if (btnShowQr) {
-        btnShowQr.onclick = () => {
-            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-            if (qrCodeContainer) {
-                qrCodeContainer.innerHTML = '';
-                if (typeof QRCode === 'function') {
-                    new QRCode(qrCodeContainer, { text: shareUrl, width: 180, height: 180 });
-                } else {
-                    qrCodeContainer.innerText = shareUrl;
+    function initGlobalClickDelegation() {
+        document.addEventListener('click', (e) => {
+            const modeBtn = e.target.closest('.mode-btn');
+            if (modeBtn) {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+                modeBtn.classList.add('selected');
+                selectedGameMode = modeBtn.getAttribute('data-mode') || 'WINNER';
+                const displayGameMode = document.getElementById('display-game-mode');
+                if (displayGameMode) {
+                    displayGameMode.innerText = selectedGameMode === 'WINNER' ? '승자 결정전' : '패자 결정전';
                 }
+                return;
             }
-            if (qrModal) qrModal.classList.add('active');
-        };
-    }
-    if (qrModalClose) qrModalClose.onclick = () => { if (qrModal) qrModal.classList.remove('active'); };
 
-    if (btnHostReset) btnHostReset.addEventListener('click', () => { if (resetOptionModal) resetOptionModal.classList.add('active'); });
-    if (btnResetKeep) btnResetKeep.addEventListener('click', () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: true }); if (resetOptionModal) resetOptionModal.classList.remove('active'); });
-    if (btnResetShuffle) btnResetShuffle.addEventListener('click', () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: false }); if (resetOptionModal) resetOptionModal.classList.remove('active'); });
-    if (btnResetCancel) btnResetCancel.addEventListener('click', () => { if (resetOptionModal) resetOptionModal.classList.remove('active'); });
-
-    if (btnHostConfig) {
-        btnHostConfig.addEventListener('click', () => {
-            if (!roomState || !roomState.config) return;
-            if (configTopicInput) configTopicInput.value = roomState.config.topic || '자유 주제';
-            if (configWordsInput) configWordsInput.value = (roomState.config.word_pool || []).join('\n');
-            updateTargetLinesOptions(roomState.config.size || 5, configTargetLinesSelect);
-            if (configTargetLinesSelect) configTargetLinesSelect.value = roomState.config.target_lines || roomState.config.size || 5;
-            if (configModal) configModal.classList.add('active');
-        });
-    }
-
-    if (btnConfigSave) {
-        btnConfigSave.addEventListener('click', () => {
-            const newTopic = configTopicInput ? configTopicInput.value.trim() : '자유 주제';
-            const newWords = configWordsInput ? (configWordsInput.value || '').split('\n').map(w => w.trim()).filter(w => w) : [];
-            const newTargetLines = configTargetLinesSelect ? parseInt(configTargetLinesSelect.value) : configModalSelectedSize;
-
-            sendMessage({
-                type: 'UPDATE_CONFIG', room_id: currentRoomId, topic: newTopic, size: configModalSelectedSize || 5, target_lines: newTargetLines, word_pool: newWords, player_id: myPlayerId
-            });
-            if (configModal) configModal.classList.remove('active');
-        });
-    }
-
-    if (btnConfigCancel) btnConfigCancel.addEventListener('click', () => { if (configModal) configModal.classList.remove('active'); });
-    if (configModalClose) configModalClose.addEventListener('click', () => { if (configModal) configModal.classList.remove('active'); });
-    if (spectateModalClose) spectateModalClose.addEventListener('click', () => { if (spectateModal) spectateModal.classList.remove('active'); spectatingPlayerId = null; });
-
-    document.addEventListener('click', (e) => {
-        const sizeBtn = e.target.closest('.size-btn');
-        if (sizeBtn) {
-            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
-            sizeBtn.classList.add('selected');
-            selectedSize = parseInt(sizeBtn.getAttribute('data-size')) || 5;
-            updateTargetLinesOptions(selectedSize, createTargetLinesSelect);
-            return;
-        }
-
-        const configSizeBtn = e.target.closest('.config-size-btn');
-        if (configSizeBtn) {
-            document.querySelectorAll('.config-size-btn').forEach(b => b.classList.remove('selected'));
-            configSizeBtn.classList.add('selected');
-            configModalSelectedSize = parseInt(configSizeBtn.getAttribute('data-size')) || 5;
-            updateTargetLinesOptions(configModalSelectedSize, configTargetLinesSelect);
-            return;
-        }
-
-        const tabBtn = e.target.closest('.tab-btn');
-        if (tabBtn) {
-            if (tabBtn.id === 'tab-btn-create') {
-                if (tabBtnCreate) tabBtnCreate.classList.add('active'); 
-                if (tabBtnJoin) tabBtnJoin.classList.remove('active');
-                if (createRoomForm) createRoomForm.style.display = 'block'; 
-                if (joinRoomForm) joinRoomForm.style.display = 'none';
-            } else if (tabBtn.id === 'tab-btn-join') {
-                if (tabBtnJoin) tabBtnJoin.classList.add('active'); 
-                if (tabBtnCreate) tabBtnCreate.classList.remove('active');
-                if (joinRoomForm) joinRoomForm.style.display = 'block'; 
-                if (createRoomForm) createRoomForm.style.display = 'none';
+            const sizeBtn = e.target.closest('.size-btn');
+            if (sizeBtn) {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+                sizeBtn.classList.add('selected');
+                selectedSize = parseInt(sizeBtn.getAttribute('data-size')) || 5;
+                const selectEl = document.getElementById('create-target-lines');
+                updateTargetLinesOptions(selectedSize, selectEl);
+                return;
             }
-            return;
-        }
-    });
 
-    if (createRoomForm) {
-        createRoomForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            sendMessage({
-                type: 'CREATE_ROOM', game_type: 'BINGO',
-                nickname: createNicknameInput.value.trim() || '김사원',
-                size: selectedSize,
-                target_lines: createTargetLinesSelect ? parseInt(createTargetLinesSelect.value) : selectedSize,
-                topic: createTopicInput.value.trim() || '자유 주제',
-                game_mode: selectedGameMode, word_pool: (createWordsInput.value || '').split('\n').map(w => w.trim()).filter(w => w)
-            });
-        });
-    }
+            const configSizeBtn = e.target.closest('.config-size-btn');
+            if (configSizeBtn) {
+                document.querySelectorAll('.config-size-btn').forEach(b => b.classList.remove('selected'));
+                configSizeBtn.classList.add('selected');
+                configModalSelectedSize = parseInt(configSizeBtn.getAttribute('data-size')) || 5;
+                const selectEl = document.getElementById('config-target-lines');
+                updateTargetLinesOptions(configModalSelectedSize, selectEl);
+                return;
+            }
 
-    if (joinRoomForm) {
-        joinRoomForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            sendMessage({ type: 'JOIN_ROOM', nickname: joinNicknameInput.value.trim() || '이대리', room_id: joinRoomCodeInput.value.trim().toUpperCase() });
-        });
-    }
+            const tabBtn = e.target.closest('.tab-btn');
+            if (tabBtn) {
+                const createForm = document.getElementById('create-room-form');
+                const joinForm = document.getElementById('join-room-form');
+                const tabBtnCreate = document.getElementById('tab-btn-create');
+                const tabBtnJoin = document.getElementById('tab-btn-join');
 
-    if (btnToggleReady) btnToggleReady.addEventListener('click', () => { sendMessage({ type: 'TOGGLE_READY' }); });
-    if (btnAutoFill) btnAutoFill.addEventListener('click', () => {
-        const size = selectedSize; const total = size * size;
-        let words = roomState?.config?.word_pool || [];
-        if (words.length < total) for (let i = 1; i <= total - words.length; i++) words.push(`단어 ${i}`);
-        sendMessage({ type: 'UPDATE_BOARD', board: [...words].sort(() => 0.5 - Math.random()).slice(0, total) });
-    });
-    if (btnClearBoard) btnClearBoard.addEventListener('click', () => { sendMessage({ type: 'UPDATE_BOARD', board: Array(selectedSize * selectedSize).fill('') }); });
-
-    if (btnCopyLink) {
-        btnCopyLink.addEventListener('click', () => {
-            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-            if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
-            else prompt('링크를 복사하세요:', shareUrl);
-        });
-    }
-
-    if (chatForm) {
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (chatInput.value.trim()) {
-                sendMessage({ type: 'CHAT_MESSAGE', message: chatInput.value.trim() });
-                chatInput.value = '';
+                if (tabBtn.id === 'tab-btn-create') {
+                    if (tabBtnCreate) tabBtnCreate.classList.add('active');
+                    if (tabBtnJoin) tabBtnJoin.classList.remove('active');
+                    if (createForm) createForm.style.display = 'block';
+                    if (joinForm) joinForm.style.display = 'none';
+                } else if (tabBtn.id === 'tab-btn-join') {
+                    if (tabBtnJoin) tabBtnJoin.classList.add('active');
+                    if (tabBtnCreate) tabBtnCreate.classList.remove('active');
+                    if (joinForm) joinForm.style.display = 'block';
+                    if (createForm) createForm.style.display = 'none';
+                }
+                return;
             }
         });
     }
 
-    // 초기화 실행
+    function initGameActionControls() {
+        const btnToggleReady = document.getElementById('btn-toggle-ready');
+        const btnAutoFill = document.getElementById('btn-auto-fill');
+        const btnClearBoard = document.getElementById('btn-clear-board');
+        const hostStartBtn = document.getElementById('btn-host-start');
+        const btnHostReset = document.getElementById('btn-host-reset');
+        const btnHostConfig = document.getElementById('btn-host-config');
+        const btnCopyLink = document.getElementById('btn-copy-link');
+        const btnShowQr = document.getElementById('btn-show-qr');
+
+        const btnResetKeep = document.getElementById('btn-reset-keep');
+        const btnResetShuffle = document.getElementById('btn-reset-shuffle');
+        const btnResetCancel = document.getElementById('btn-reset-cancel');
+        const resetOptionModal = document.getElementById('reset-option-modal');
+
+        const configModal = document.getElementById('config-modal');
+        const configModalClose = document.getElementById('config-modal-close');
+        const btnConfigSave = document.getElementById('btn-config-save');
+        const btnConfigCancel = document.getElementById('btn-config-cancel');
+        const spectateModalClose = document.getElementById('spectate-modal-close');
+        const spectateModal = document.getElementById('spectate-modal');
+
+        const qrModal = document.getElementById('qr-modal');
+        const qrModalClose = document.getElementById('qr-modal-close');
+
+        if (btnToggleReady) {
+            btnToggleReady.onclick = () => {
+                const myPlayer = roomState?.players?.find(p => p.player_id === myPlayerId);
+                if (myPlayer && roomState.status === 'WAITING') {
+                    const emptyCount = updateEmptyCellCount(myPlayer.board, roomState.config.size);
+                    if (!myPlayer.is_ready && emptyCount > 0) {
+                        showToast(`모든 칸을 채워야 준비 완료할 수 있습니다! (빈 칸: ${emptyCount}개)`);
+                        return;
+                    }
+                }
+                sendMessage({ type: 'TOGGLE_READY' });
+            };
+        }
+
+        if (hostStartBtn) hostStartBtn.onclick = () => sendMessage({ type: 'START_GAME' });
+
+        if (btnAutoFill) {
+            btnAutoFill.onclick = () => {
+                if (!roomState) return;
+                const size = roomState.config?.size || selectedSize;
+                const total = size * size;
+                
+                const fallbackPreset = (typeof BINGO_PRESETS !== 'undefined' && Array.isArray(BINGO_PRESETS))
+                    ? (BINGO_PRESETS[1]?.words || [])
+                    : [];
+                let pool = roomState.config?.word_pool || [];
+
+                if (!pool || pool.length < total) {
+                    pool = [...new Set([...(pool || []), ...fallbackPreset])];
+                }
+
+                let shuffled = [...pool].sort(() => 0.5 - Math.random());
+                if (shuffled.length < total) {
+                    for (let i = 1; shuffled.length < total; i++) {
+                        shuffled.push(`단어 ${i}`);
+                    }
+                }
+                const newBoard = shuffled.slice(0, total);
+                sendMessage({ type: 'UPDATE_BOARD', room_id: currentRoomId, board: newBoard });
+                showToast("보드를 무작위로 채웠습니다.");
+            };
+        }
+
+        if (btnClearBoard) {
+            btnClearBoard.onclick = () => {
+                if (!roomState) return;
+                const size = roomState.config?.size || selectedSize;
+                sendMessage({ type: 'UPDATE_BOARD', room_id: currentRoomId, board: Array(size * size).fill('') });
+                showToast("보드를 비웠습니다.");
+            };
+        }
+
+        if (btnHostReset) btnHostReset.onclick = () => { if (resetOptionModal) resetOptionModal.classList.add('active'); };
+        if (btnResetKeep) btnResetKeep.onclick = () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: true }); if (resetOptionModal) resetOptionModal.classList.remove('active'); };
+        if (btnResetShuffle) btnResetShuffle.onclick = () => { sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId, keep_board: false }); if (resetOptionModal) resetOptionModal.classList.remove('active'); };
+        if (btnResetCancel) btnResetCancel.onclick = () => { if (resetOptionModal) resetOptionModal.classList.remove('active'); };
+
+        if (btnHostConfig) {
+            btnHostConfig.onclick = () => {
+                if (!roomState || !roomState.config) return;
+                const configTopicInput = document.getElementById('config-topic-input');
+                const configWordsInput = document.getElementById('config-words-input');
+                const configTargetLinesSelect = document.getElementById('config-target-lines');
+
+                if (configTopicInput) configTopicInput.value = roomState.config.topic || '자유 주제';
+                if (configWordsInput) configWordsInput.value = (roomState.config.word_pool || []).join('\n');
+                updateTargetLinesOptions(roomState.config.size || 5, configTargetLinesSelect);
+                if (configTargetLinesSelect) configTargetLinesSelect.value = roomState.config.target_lines || roomState.config.size || 5;
+                if (configModal) configModal.classList.add('active');
+            };
+        }
+
+        if (btnConfigSave) {
+            btnConfigSave.onclick = () => {
+                const configTopicInput = document.getElementById('config-topic-input');
+                const configWordsInput = document.getElementById('config-words-input');
+                const configTargetLinesSelect = document.getElementById('config-target-lines');
+
+                const newTopic = configTopicInput ? configTopicInput.value.trim() : '자유 주제';
+                const newWords = configWordsInput ? (configWordsInput.value || '').split('\n').map(w => w.trim()).filter(w => w) : [];
+                const newTargetLines = configTargetLinesSelect ? parseInt(configTargetLinesSelect.value) : configModalSelectedSize;
+
+                sendMessage({
+                    type: 'UPDATE_CONFIG', room_id: currentRoomId, topic: newTopic, size: configModalSelectedSize || 5, target_lines: newTargetLines, word_pool: newWords, player_id: myPlayerId
+                });
+                if (configModal) configModal.classList.remove('active');
+            };
+        }
+
+        if (btnConfigCancel) btnConfigCancel.onclick = () => { if (configModal) configModal.classList.remove('active'); };
+        if (configModalClose) configModalClose.onclick = () => { if (configModal) configModal.classList.remove('active'); };
+        if (spectateModalClose) spectateModalClose.onclick = () => { if (spectateModal) spectateModal.classList.remove('active'); spectatingPlayerId = null; };
+
+        if (btnCopyLink) {
+            btnCopyLink.onclick = () => {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+                if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
+                else prompt('링크를 복사하세요:', shareUrl);
+            };
+        }
+
+        if (btnShowQr) {
+            btnShowQr.onclick = () => {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+                const qrCodeContainer = document.getElementById('qrcode');
+                if (qrCodeContainer) {
+                    qrCodeContainer.innerHTML = '';
+                    if (typeof QRCode === 'function') new QRCode(qrCodeContainer, { text: shareUrl, width: 180, height: 180 });
+                    else qrCodeContainer.innerText = shareUrl;
+                }
+                if (qrModal) qrModal.classList.add('active');
+            };
+        }
+        if (qrModalClose) qrModalClose.onclick = () => { if (qrModal) qrModal.classList.remove('active'); };
+
+        const stabChat = document.getElementById('stab-chat');
+        const stabCalls = document.getElementById('stab-calls');
+        const panelChat = document.getElementById('panel-chat');
+        const panelCalls = document.getElementById('panel-calls');
+
+        if (stabChat && stabCalls) {
+            stabChat.onclick = () => {
+                stabChat.classList.add('active'); stabCalls.classList.remove('active');
+                if (panelChat) panelChat.style.display = 'flex';
+                if (panelCalls) panelCalls.style.display = 'none';
+            };
+            stabCalls.onclick = () => {
+                stabCalls.classList.add('active'); stabChat.classList.remove('active');
+                if (panelCalls) panelCalls.style.display = 'flex';
+                if (panelChat) panelChat.style.display = 'none';
+            };
+        }
+    }
+
+    function initFormControls() {
+        const createRoomForm = document.getElementById('create-room-form');
+        const joinRoomForm = document.getElementById('join-room-form');
+
+        if (createRoomForm) {
+            createRoomForm.onsubmit = function (e) {
+                e.preventDefault();
+                const nicknameEl = document.getElementById('create-nickname');
+                const topicEl = document.getElementById('create-topic');
+                const wordsEl = document.getElementById('create-words');
+                const targetLinesEl = document.getElementById('create-target-lines');
+                const titleEl = document.getElementById('create-title');
+
+                const nickname = nicknameEl ? (nicknameEl.value.trim() || '김사원') : '김사원';
+                const topic = topicEl ? (topicEl.value.trim() || '자유 주제') : '자유 주제';
+                const words = wordsEl ? (wordsEl.value || '').split('\n').map(w => w.trim()).filter(w => w) : [];
+                const targetLines = targetLinesEl ? parseInt(targetLinesEl.value) : selectedSize;
+                const title = titleEl ? titleEl.value.trim() : '사내 실시간 빙고';
+
+                sendMessage({
+                    type: 'CREATE_ROOM',
+                    game_type: 'BINGO',
+                    title: title,
+                    nickname: nickname,
+                    size: selectedSize,
+                    target_lines: targetLines,
+                    topic: topic,
+                    game_mode: selectedGameMode,
+                    word_pool: words
+                });
+            };
+        }
+
+        if (joinRoomForm) {
+            joinRoomForm.onsubmit = function (e) {
+                e.preventDefault();
+                const nicknameEl = document.getElementById('join-nickname');
+                const roomCodeEl = document.getElementById('join-room-code');
+
+                const nickname = nicknameEl ? (nicknameEl.value.trim() || '이대리') : '이대리';
+                const roomCode = roomCodeEl ? roomCodeEl.value.trim().toUpperCase() : '';
+
+                sendMessage({
+                    type: 'JOIN_ROOM',
+                    nickname: nickname,
+                    room_id: roomCode
+                });
+            };
+        }
+
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        if (chatForm) {
+            chatForm.onsubmit = function (e) {
+                e.preventDefault();
+                if (chatInput && chatInput.value.trim()) {
+                    sendMessage({ type: 'CHAT_MESSAGE', message: chatInput.value.trim() });
+                    chatInput.value = '';
+                }
+            };
+        }
+    }
+
+    // 실행 초기화
     initStealthMode();
-    initMobileSidebar(); // ★ 모바일 바텀시트 슬라이더 초기화 ★
+    initMobileSidebar();
     initNavControls();
     initPresetChips();
-    updateTargetLinesOptions(selectedSize, createTargetLinesSelect);
+    initGlobalClickDelegation();
+    initFormControls();
+    initGameActionControls();
+    updateTargetLinesOptions(selectedSize, document.getElementById('create-target-lines'));
     connectNetwork();
 })();

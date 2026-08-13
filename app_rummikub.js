@@ -1,8 +1,13 @@
+/**
+ * Office Rummikub Live Client Application Logic - Host Ready Button Fix
+ */
+
 (function () {
     let socket = null;
     let currentRoomId = null;
     let myPlayerId = null;
     let roomState = null;
+    let previousTurnPlayerId = null;
 
     let selectedTiles = [];
     let localRack = [];
@@ -26,9 +31,7 @@
                 document.body.classList.toggle('excel-stealth-mode');
                 const isStealth = document.body.classList.contains('excel-stealth-mode');
 
-                if (stealthOpacityBox) {
-                    stealthOpacityBox.style.display = isStealth ? 'flex' : 'none';
-                }
+                if (stealthOpacityBox) stealthOpacityBox.style.display = isStealth ? 'flex' : 'none';
 
                 if (isStealth) {
                     if (brandIconEl) brandIconEl.innerText = '📊';
@@ -49,7 +52,6 @@
         }
     }
 
-    // ★ 모바일 바텀시트 제어 스크립트 ★
     function initMobileSidebar() {
         const mobileFabBtn = document.getElementById('mobile-fab-btn');
         const mobileSidebar = document.getElementById('mobile-sidebar');
@@ -70,12 +72,8 @@
         const soundToggleBtn = document.getElementById('sound-toggle-btn');
         const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
-        if (btnHelp && helpModal) {
-            btnHelp.onclick = () => helpModal.classList.add('active');
-        }
-        if (helpModalClose && helpModal) {
-            helpModalClose.onclick = () => helpModal.classList.remove('active');
-        }
+        if (btnHelp && helpModal) btnHelp.onclick = () => helpModal.classList.add('active');
+        if (helpModalClose && helpModal) helpModalClose.onclick = () => helpModal.classList.remove('active');
 
         if (soundToggleBtn) {
             soundToggleBtn.onclick = () => {
@@ -102,7 +100,7 @@
         toast.className = 'toast-item';
         toast.innerText = message;
         container.appendChild(toast);
-        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 2500);
     }
 
     function checkUrlQueryParams() {
@@ -135,6 +133,12 @@
         };
     }
 
+    function sendMessage(msgDict) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify(msgDict));
+        }
+    }
+
     function handleServerMessage(msg) {
         if (msg.type === 'ROOM_JOINED') {
             currentRoomId = msg.room_id;
@@ -160,7 +164,7 @@
                 renderChatLogs();
             }
         } else if (msg.type === 'ERROR') {
-            alert(msg.message);
+            showToast(msg.message || '오류가 발생했습니다.');
         }
     }
 
@@ -189,41 +193,40 @@
         const roomBadge = document.getElementById('room-state-badge');
         const turnBanner = document.getElementById('turn-banner');
         const turnPlayerBadge = document.getElementById('turn-player-badge');
+        const hostControls = document.getElementById('host-controls');
 
         document.getElementById('display-room-code').innerText = roomState.room_id;
         document.getElementById('display-grid-info').innerText = `턴 제한 시간: ${roomState.turn_time_limit || 60}초`;
 
+        const titleEl = document.getElementById('display-topic-title');
+        if (titleEl && roomState.title) titleEl.innerText = roomState.title;
+
         if (status === 'WAITING') {
-            if (roomBadge) {
-                roomBadge.className = 'room-state-badge waiting';
-                roomBadge.innerText = '대기 중';
-            }
+            if (roomBadge) { roomBadge.className = 'room-state-badge waiting'; roomBadge.innerText = '대기 중'; }
             if (turnBanner) turnBanner.style.display = 'none';
 
+            // ★ 핵심 수정: 방장 및 참가자 구분 없이 [준비 완료] 버튼을 무조건 노출 ★
             if (myPlayer) {
+                if (readyBtn) {
+                    readyBtn.style.display = 'inline-block';
+                    readyBtn.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
+                }
+
                 if (myPlayer.is_host) {
-                    document.getElementById('host-controls').style.display = 'block';
-                    document.getElementById('btn-toggle-ready').style.display = 'none';
-                    const allReady = roomState.players.every(p => p.is_ready);
+                    if (hostControls) hostControls.style.display = 'block';
                     if (hostBtn) {
+                        const allReady = roomState.players.every(p => p.is_ready);
                         hostBtn.disabled = !allReady;
                         hostBtn.innerText = allReady ? '게임 시작하기!' : '준비 대기 중...';
                     }
                 } else {
-                    document.getElementById('host-controls').style.display = 'none';
-                    if (readyBtn) {
-                        readyBtn.style.display = 'inline-block';
-                        readyBtn.innerText = myPlayer.is_ready ? '준비 완료됨 (해제)' : '준비 완료';
-                    }
+                    if (hostControls) hostControls.style.display = 'none';
                 }
             }
         } else {
-            if (roomBadge) {
-                roomBadge.className = 'room-state-badge playing';
-                roomBadge.innerText = '게임 진행 중';
-            }
+            if (roomBadge) { roomBadge.className = 'room-state-badge playing'; roomBadge.innerText = '게임 진행 중'; }
             if (turnBanner) turnBanner.style.display = 'flex';
-            document.getElementById('host-controls').style.display = 'none';
+            if (hostControls) hostControls.style.display = 'none';
 
             const isMyTurn = (myPlayerId === roomState.current_turn_player_id);
             const turnPlayer = roomState.players.find(p => p.player_id === roomState.current_turn_player_id);
@@ -238,19 +241,21 @@
                 }
             }
 
+            if (roomState.current_turn_player_id === myPlayerId && previousTurnPlayerId !== myPlayerId) {
+                showToast("🧩 당신의 턴입니다! 타일을 조합하거나 드로우하세요!");
+            }
+            previousTurnPlayerId = roomState.current_turn_player_id;
+
             startClientTurnTimer(roomState.turn_time_remaining || roomState.turn_time_limit || 60, roomState.turn_time_limit || 60);
         }
 
-        if (myPlayer) {
-            localRack = [...(myPlayer.rack || [])];
-        }
+        if (myPlayer) localRack = [...(myPlayer.rack || [])];
 
         localTableSets = JSON.parse(JSON.stringify(roomState.table_sets || []));
         renderRack();
         renderTable();
         renderPlayers();
         renderChatLogs();
-        renderSystemCalls();
     }
 
     function startClientTurnTimer(secondsLeft, totalLimit) {
@@ -286,11 +291,11 @@
             const div = document.createElement('div');
             div.className = `rummi-tile tile-${tile.color} ${selectedTiles.includes(tile.id) ? 'selected' : ''}`;
             div.innerText = tile.is_joker ? '★' : tile.number;
-            div.addEventListener('click', () => {
+            div.onclick = () => {
                 if (selectedTiles.includes(tile.id)) selectedTiles = selectedTiles.filter(id => id !== tile.id);
                 else selectedTiles.push(tile.id);
                 renderRack();
-            });
+            };
             container.appendChild(div);
         });
     }
@@ -335,7 +340,7 @@
             if (roomState.status === 'WAITING' || !roomState.status) {
                 statusHtml = p.is_ready
                     ? '<span class="ready-tag ready">준비 완료</span>'
-                    : '<span class="ready-tag waiting">대기 중...</span>';
+                    : '<span class="ready-tag waiting">작성 중...</span>';
             } else {
                 statusHtml = `<span>타일 ${p.tile_count || 0}개 ${isTurnPlayer ? '🎯' : ''}</span>`;
             }
@@ -348,9 +353,7 @@
                         ${p.is_host ? '<span class="host-tag">방장</span>' : ''}
                     </div>
                 </div>
-                <div>
-                    ${statusHtml}
-                </div>
+                <div>${statusHtml}</div>
             `;
             panel.appendChild(card);
         });
@@ -370,175 +373,185 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function renderSystemCalls() {
-        const callBox = document.getElementById('panel-calls');
-        if (!callBox || !roomState) return;
-        callBox.innerHTML = '';
-        const systemLogs = (roomState.chat_logs || []).filter(chat => chat.system);
-        systemLogs.forEach(chat => {
-            const item = document.createElement('div');
-            item.className = 'call-item-system';
-            item.innerText = chat.text;
-            callBox.appendChild(item);
-        });
-        callBox.scrollTop = callBox.scrollHeight;
-    }
-
     function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])); }
 
-    const createTabBtn = document.getElementById('tab-btn-create');
-    const joinTabBtn = document.getElementById('tab-btn-join');
-    const createForm = document.getElementById('create-room-form');
-    const joinForm = document.getElementById('join-room-form');
-
-    if (createTabBtn && joinTabBtn) {
-        createTabBtn.addEventListener('click', () => {
-            createTabBtn.classList.add('active');
-            joinTabBtn.classList.remove('active');
-            if (createForm) createForm.style.display = 'block';
-            if (joinForm) joinForm.style.display = 'none';
-        });
-
-        joinTabBtn.addEventListener('click', () => {
-            joinTabBtn.classList.add('active');
-            createTabBtn.classList.remove('active');
-            if (joinForm) joinForm.style.display = 'block';
-            if (createForm) createForm.style.display = 'none';
-        });
-    }
-
-    const btnCopyLink = document.getElementById('btn-copy-link');
-    if (btnCopyLink) {
-        btnCopyLink.addEventListener('click', () => {
-            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'))
-                .catch(() => prompt('아래 링크를 복사하세요:', shareUrl));
-            } else {
-                prompt('아래 링크를 복사하세요:', shareUrl);
+    function initGlobalClickDelegation() {
+        document.addEventListener('click', (e) => {
+            const timeBtn = e.target.closest('.time-btn');
+            if (timeBtn) {
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+                timeBtn.classList.add('selected');
+                selectedTimeLimit = parseInt(timeBtn.getAttribute('data-time')) || 60;
+                return;
             }
-        });
-    }
 
-    const btnShowQr = document.getElementById('btn-show-qr');
-    if (btnShowQr) {
-        btnShowQr.addEventListener('click', () => {
-            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
-            const qrContainer = document.getElementById('qrcode');
-            if (qrContainer) {
-                qrContainer.innerHTML = '';
-                if (typeof QRCode === 'function') {
-                    new QRCode(qrContainer, { text: shareUrl, width: 180, height: 180 });
-                } else {
-                    qrContainer.innerText = shareUrl;
+            const tabBtn = e.target.closest('.tab-btn');
+            if (tabBtn) {
+                const createForm = document.getElementById('create-room-form');
+                const joinForm = document.getElementById('join-room-form');
+                const tabBtnCreate = document.getElementById('tab-btn-create');
+                const tabBtnJoin = document.getElementById('tab-btn-join');
+
+                if (tabBtn.id === 'tab-btn-create') {
+                    if (tabBtnCreate) tabBtnCreate.classList.add('active');
+                    if (tabBtnJoin) tabBtnJoin.classList.remove('active');
+                    if (createForm) createForm.style.display = 'block';
+                    if (joinForm) joinForm.style.display = 'none';
+                } else if (tabBtn.id === 'tab-btn-join') {
+                    if (tabBtnJoin) tabBtnJoin.classList.add('active');
+                    if (tabBtnCreate) tabBtnCreate.classList.remove('active');
+                    if (joinForm) joinForm.style.display = 'block';
+                    if (createForm) createForm.style.display = 'none';
                 }
+                return;
             }
-            document.getElementById('qr-modal').classList.add('active');
         });
     }
 
-    const qrModalClose = document.getElementById('qr-modal-close');
-    if (qrModalClose) {
-        qrModalClose.addEventListener('click', () => {
-            document.getElementById('qr-modal').classList.remove('active');
-        });
-    }
+    function initGameControls() {
+        const btnToggleReady = document.getElementById('btn-toggle-ready');
+        const hostStartBtn = document.getElementById('btn-host-start');
+        const btnHostReset = document.getElementById('btn-host-reset');
+        const btnResetConfirm = document.getElementById('btn-reset-confirm');
+        const btnResetCancel = document.getElementById('btn-reset-cancel');
+        const resetOptionModal = document.getElementById('reset-option-modal');
 
-    document.querySelectorAll('.time-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
-            e.target.classList.add('selected');
-            selectedTimeLimit = parseInt(e.target.getAttribute('data-time')) || 60;
-        });
-    });
+        const btnSortColor = document.getElementById('btn-sort-color');
+        const btnSortNumber = document.getElementById('btn-sort-number');
+        const btnSubmitTurn = document.getElementById('btn-submit-turn');
+        const btnCopyLink = document.getElementById('btn-copy-link');
+        const btnShowQr = document.getElementById('btn-show-qr');
+        const qrModal = document.getElementById('qr-modal');
+        const qrModalClose = document.getElementById('qr-modal-close');
 
-    document.getElementById('btn-toggle-ready').addEventListener('click', () => {
-        socket.send(JSON.stringify({ type: 'TOGGLE_READY' }));
-    });
+        if (btnToggleReady) btnToggleReady.onclick = () => sendMessage({ type: 'TOGGLE_READY' });
+        if (hostStartBtn) hostStartBtn.onclick = () => sendMessage({ type: 'START_GAME' });
 
-    const hostStartBtn = document.getElementById('btn-host-start');
-    if (hostStartBtn) {
-        hostStartBtn.addEventListener('click', () => {
-            socket.send(JSON.stringify({ type: 'START_GAME' }));
-        });
-    }
-
-    const stabChat = document.getElementById('stab-chat');
-    const stabCalls = document.getElementById('stab-calls');
-    const panelChat = document.getElementById('panel-chat');
-    const panelCalls = document.getElementById('panel-calls');
-
-    if (stabChat && stabCalls) {
-        stabChat.onclick = () => {
-            stabChat.classList.add('active');
-            stabCalls.classList.remove('active');
-            if (panelChat) panelChat.style.display = 'flex';
-            if (panelCalls) panelCalls.style.display = 'none';
-        };
-
-        stabCalls.onclick = () => {
-            stabCalls.classList.add('active');
-            stabChat.classList.remove('active');
-            if (panelCalls) panelCalls.style.display = 'flex';
-            if (panelChat) panelChat.style.display = 'none';
-        };
-    }
-
-    document.getElementById('btn-sort-color').addEventListener('click', () => {
-        localRack.sort((a, b) => a.color.localeCompare(b.color) || a.number - b.number);
-        renderRack();
-    });
-
-    document.getElementById('btn-sort-number').addEventListener('click', () => {
-        localRack.sort((a, b) => a.number - b.number || a.color.localeCompare(b.color));
-        renderRack();
-    });
-
-    document.getElementById('btn-submit-turn').addEventListener('click', () => {
-        if (selectedTiles.length >= 3) {
-            const playedSet = localRack.filter(t => selectedTiles.includes(t.id));
-            localRack = localRack.filter(t => !selectedTiles.includes(t.id));
-            localTableSets.push(playedSet);
-            selectedTiles = [];
+        if (btnHostReset) btnHostReset.onclick = () => { if (resetOptionModal) resetOptionModal.classList.add('active'); };
+        if (btnResetConfirm) {
+            btnResetConfirm.onclick = () => {
+                sendMessage({ type: 'RESET_GAME', room_id: currentRoomId, player_id: myPlayerId });
+                if (resetOptionModal) resetOptionModal.classList.remove('active');
+            };
         }
-        socket.send(JSON.stringify({
-            type: 'SUBMIT_TURN',
-            table_sets: localTableSets,
-            rack: localRack
-        }));
-    });
+        if (btnResetCancel) btnResetCancel.onclick = () => { if (resetOptionModal) resetOptionModal.classList.remove('active'); };
 
-    document.getElementById('create-room-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        socket.send(JSON.stringify({
-            type: 'CREATE_ROOM',
-            game_type: 'RUMMIKUB',
-            nickname: document.getElementById('create-nickname').value,
-            turn_time_limit: selectedTimeLimit
-        }));
-    });
-
-    document.getElementById('join-room-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        socket.send(JSON.stringify({
-            type: 'JOIN_ROOM',
-            nickname: document.getElementById('join-nickname').value,
-            room_id: document.getElementById('join-room-code').value
-        }));
-    });
-
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input');
-        if (input.value.trim() && socket) {
-            socket.send(JSON.stringify({ type: 'CHAT_MESSAGE', message: input.value.trim() }));
-            input.value = '';
+        if (btnSortColor) {
+            btnSortColor.onclick = () => {
+                localRack.sort((a, b) => a.color.localeCompare(b.color) || a.number - b.number);
+                renderRack();
+                showToast("타일을 색상별로 정렬했습니다.");
+            };
         }
-    });
+
+        if (btnSortNumber) {
+            btnSortNumber.onclick = () => {
+                localRack.sort((a, b) => a.number - b.number || a.color.localeCompare(b.color));
+                renderRack();
+                showToast("타일을 숫자별로 정렬했습니다.");
+            };
+        }
+
+        if (btnSubmitTurn) {
+            btnSubmitTurn.onclick = () => {
+                if (selectedTiles.length >= 3) {
+                    const playedSet = localRack.filter(t => selectedTiles.includes(t.id));
+                    localRack = localRack.filter(t => !selectedTiles.includes(t.id));
+                    localTableSets.push(playedSet);
+                    selectedTiles = [];
+                }
+                sendMessage({ type: 'SUBMIT_TURN', table_sets: localTableSets, rack: localRack });
+            };
+        }
+
+        if (btnCopyLink) {
+            btnCopyLink.onclick = () => {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+                if (navigator.clipboard) navigator.clipboard.writeText(shareUrl).then(() => showToast('초대 링크가 복사되었습니다!'));
+                else prompt('아래 링크를 복사하세요:', shareUrl);
+            };
+        }
+
+        if (btnShowQr) {
+            btnShowQr.onclick = () => {
+                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${currentRoomId}`;
+                const qrContainer = document.getElementById('qrcode');
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    if (typeof QRCode === 'function') new QRCode(qrContainer, { text: shareUrl, width: 180, height: 180 });
+                    else qrContainer.innerText = shareUrl;
+                }
+                if (qrModal) qrModal.classList.add('active');
+            };
+        }
+
+        if (qrModalClose && qrModal) qrModalClose.onclick = () => qrModal.classList.remove('active');
+
+        const stabChat = document.getElementById('stab-chat');
+        const stabCalls = document.getElementById('stab-calls');
+        const panelChat = document.getElementById('panel-chat');
+        const panelCalls = document.getElementById('panel-calls');
+
+        if (stabChat && stabCalls) {
+            stabChat.onclick = () => {
+                stabChat.classList.add('active'); stabCalls.classList.remove('active');
+                if (panelChat) panelChat.style.display = 'flex';
+                if (panelCalls) panelCalls.style.display = 'none';
+            };
+            stabCalls.onclick = () => {
+                stabCalls.classList.add('active'); stabChat.classList.remove('active');
+                if (panelCalls) panelCalls.style.display = 'flex';
+                if (panelChat) panelChat.style.display = 'none';
+            };
+        }
+    }
+
+    function initFormControls() {
+        const createForm = document.getElementById('create-room-form');
+        const joinForm = document.getElementById('join-room-form');
+
+        if (createForm) {
+            createForm.onsubmit = (e) => {
+                e.preventDefault();
+                const customTitle = document.getElementById('create-title') ? document.getElementById('create-title').value.trim() : '레트로 실시간 루미큐브';
+                sendMessage({
+                    type: 'CREATE_ROOM', game_type: 'RUMMIKUB',
+                    title: customTitle,
+                    nickname: document.getElementById('create-nickname').value,
+                    turn_time_limit: selectedTimeLimit
+                });
+            };
+        }
+
+        if (joinForm) {
+            joinForm.onsubmit = (e) => {
+                e.preventDefault();
+                sendMessage({
+                    type: 'JOIN_ROOM', nickname: document.getElementById('join-nickname').value,
+                    room_id: document.getElementById('join-room-code').value
+                });
+            };
+        }
+
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        if (chatForm) {
+            chatForm.onsubmit = (e) => {
+                e.preventDefault();
+                if (chatInput && chatInput.value.trim()) {
+                    sendMessage({ type: 'CHAT_MESSAGE', message: chatInput.value.trim() });
+                    chatInput.value = '';
+                }
+            };
+        }
+    }
 
     // 실행 초기화
     initStealthMode();
-    initMobileSidebar(); // ★ 모바일 바텀시트 초기화 ★
+    initMobileSidebar();
     initNavControls();
+    initGlobalClickDelegation();
+    initFormControls();
+    initGameControls();
     connectNetwork();
 })();

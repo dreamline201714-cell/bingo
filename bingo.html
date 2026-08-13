@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>26년 재무상태표.xlsx - Excel</title>
     
-    <link rel="stylesheet" href="style_bingo.css?v=20260813_v7">
+    <link rel="stylesheet" href="style_bingo.css?v=20260813_v14">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -14,7 +14,6 @@
     <canvas id="confetti-canvas"></canvas>
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- 모바일 전용 대화 플로팅 버튼 (FAB) -->
     <button class="mobile-fab" id="mobile-fab-btn">
         💬 대화 / 목록 (<span id="mobile-player-count">1</span>명)
     </button>
@@ -68,6 +67,11 @@
                     <div class="form-group">
                         <label class="form-label" for="create-nickname">내 닉네임</label>
                         <input type="text" id="create-nickname" class="form-input" placeholder="예: 김사원 (마케팅팀)" maxlength="12">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="create-title">게임 방 제목 설정</label>
+                        <input type="text" id="create-title" class="form-input" value="사내 실시간 빙고" placeholder="예: [마케팅팀] 점심 메뉴 빙고 한판!" maxlength="20" required>
                     </div>
 
                     <div class="form-group">
@@ -246,40 +250,106 @@
         </section>
     </main>
 
-    <!-- 도움말 모달 -->
+    <!-- 🎲 턴 순서 제비뽑기 모달 -->
+    <div class="modal-overlay" id="draw-modal">
+        <div class="modal-box" style="text-align: center;">
+            <div class="draw-spinner" id="draw-spinner" style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
+            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
+            <div class="draw-result-list" id="draw-result-list"></div>
+        </div>
+    </div>
+
+    <!-- 모바일 상단 고정 헤더 적용 상세 게임 방법 모달 -->
     <div class="modal-overlay" id="help-modal">
         <div class="modal-box help-modal-box">
             <div class="modal-header">
                 <h3>🎮 게임 방법 &amp; 규칙</h3>
                 <button class="modal-close" id="help-modal-close">&times;</button>
             </div>
+            
             <div class="modal-body-scroll help-modal-body">
                 <div class="help-section">
                     <div class="help-section-title">📋 게임 진행 순서</div>
                     <div class="help-step-list">
                         <div class="help-step">
                             <div class="help-step-num">1</div>
-                            <div class="help-step-text"><strong>방 만들기 / 참여하기</strong><br>방장은 게임 설정 후 방을 만들고 코드를 공유합니다.</div>
+                            <div class="help-step-text">
+                                <strong>방 만들기 / 참여하기</strong><br>
+                                방장은 게임 설정 후 방을 만들고 6자리 코드를 공유합니다. 참가자는 코드·링크·QR로 입장합니다.
+                            </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">2</div>
-                            <div class="help-step-text"><strong>나만의 빙고판 채우기</strong><br>칸을 클릭해 직접 입력하거나 하단 단어를 선택해 채웁니다.</div>
+                            <div class="help-step-text">
+                                <strong>나만의 빙고판 채우기</strong><br>
+                                칸을 클릭해 직접 단어를 입력하거나, 하단 추천 단어를 클릭해 자동으로 채웁니다.<br>
+                                <span class="help-tip">💡 모든 칸을 채워야 준비 완료 버튼을 누를 수 있습니다.</span>
+                            </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">3</div>
-                            <div class="help-step-text"><strong>내 턴에 단어 하나 클릭</strong><br>내가 단어를 선택하면 모두의 보드에서 동시에 체크됩니다.</div>
+                            <div class="help-step-text">
+                                <strong>준비 완료 ➔ 게임 시작</strong><br>
+                                모든 참가자가 준비 완료하면 방장이 게임을 시작합니다. 자동으로 랜덤 턴 순서가 결정됩니다.
+                            </div>
                         </div>
                         <div class="help-step">
                             <div class="help-step-num">4</div>
-                            <div class="help-step-text"><strong>목표 줄 수 달성 시 승리!</strong><br>목표 줄 수를 먼저 완성하면 우승!</div>
+                            <div class="help-step-text">
+                                <strong>내 턴에 단어 하나 클릭</strong><br>
+                                상단 배너에 내 이름이 뜨면 내 빙고판에서 단어를 클릭합니다. 선택한 단어는 <strong>모든 참가자의 보드에서 동시에 지워집니다.</strong><br>
+                                <span class="help-tip">⏱️ 15초 안에 선택하지 않으면 자동으로 랜덤 단어가 선택됩니다.</span>
+                            </div>
+                        </div>
+                        <div class="help-step">
+                            <div class="help-step-num">5</div>
+                            <div class="help-step-text">
+                                <strong>모든 칸이 지워지면 완성!</strong><br>
+                                빙고판의 모든 칸(3x3=9칸, 4x4=16칸, 5x5=25칸)이 지워지면 해당 플레이어가 완성됩니다.
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">🎯 게임 모드</div>
+                    <div class="help-mode-grid">
+                        <div class="help-mode-card winner">
+                            <div class="help-mode-icon">🥇</div>
+                            <div class="help-mode-name">승자 결정전</div>
+                            <div class="help-mode-desc">가장 먼저 모든 칸을 완성한 1명이 우승! 완성 즉시 게임 종료.</div>
+                        </div>
+                        <div class="help-mode-card loser">
+                            <div class="help-mode-icon">💣</div>
+                            <div class="help-mode-name">패자 결정전</div>
+                            <div class="help-mode-desc">칸을 완성하면 탈출! 끝까지 남은 마지막 1명이 패자(벌칙 당첨).</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">📐 보드 크기</div>
+                    <div class="help-size-row">
+                        <div class="help-size-item">⚡ <strong>3x3</strong> - 9칸 · 스피드전</div>
+                        <div class="help-size-item">🎯 <strong>4x4</strong> - 16칸 · 클래식</div>
+                        <div class="help-size-item">👑 <strong>5x5</strong> - 25칸 · 진동진</div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <div class="help-section-title">✨ 기타 팁</div>
+                    <ul class="help-tip-list">
+                        <li>참가자 목록에서 상대방 이름을 클릭하면 그 <strong>사람의 보드를 실시간 관전</strong>할 수 있습니다.</li>
+                        <li><strong>대화 탭</strong>에서 참가자들과 실시간 채팅이 가능합니다.</li>
+                        <li>방장은 게임 중에도 <strong>대기실로 리셋</strong>이 가능합니다.</li>
+                        <li>게임 종료 후 <strong>15초 카운트다운</strong>이 끝나면 자동으로 대기실로 돌아갑니다.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 기타 모달 생략(설정, 관전, QR 모달 유지) -->
+    <!-- 방장 설정 변경 모달 -->
     <div class="modal-overlay" id="config-modal">
         <div class="modal-box" style="max-width: 520px;">
             <div class="modal-header">
@@ -343,14 +413,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="draw-modal">
-        <div class="modal-box" style="text-align: center;">
-            <div class="draw-spinner" id="draw-spinner" style="font-size: 3rem; margin-bottom: 12px;">🎲</div>
-            <h3 style="font-size: 1.3rem; margin-bottom: 8px;">턴 순서 제비뽑기 진행 중</h3>
-            <div class="draw-result-list" id="draw-result-list"></div>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="qr-modal">
         <div class="modal-box">
             <div class="modal-header">
@@ -361,7 +423,8 @@
         </div>
     </div>
 
-    <script src="presets.js"></script>
-    <script src="app_bingo.js?v=20260813_v7"></script>
+    <!-- ★ 외부 presets.js 로드 원복 ★ -->
+    <script src="presets.js?v=20260813_v14"></script>
+    <script src="app_bingo.js?v=20260813_v14"></script>
 </body>
 </html>
