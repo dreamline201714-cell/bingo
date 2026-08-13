@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Infinite Betting Fix
+Office Games Live Unified Server (Bingo + Rummikub + Seotda) - Final Fixed
 """
 
 import asyncio
@@ -334,6 +334,7 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
         await broadcast_to_room(room_id, {'type': 'ROOM_UPDATED', 'state': None})
         return room_id
 
+    # ★ 게임 시작 시 루미큐브 덱 생성 및 14장 타일 지급 보장 ★
     elif msg_type == 'START_GAME':
         room = ROOMS.get(current_room_id)
         if not room or not room['players'][ws]['is_host']: return current_room_id
@@ -344,13 +345,49 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
         room['turn_order'] = player_sockets
         room['current_turn_index'] = 0
 
-        if room['game_type'] == 'SEOTDA':
+        if room['game_type'] == 'RUMMIKUB':
+            deck = generate_rummikub_deck()
+            room['table_sets'] = []
+            for p_ws in player_sockets:
+                room['players'][p_ws]['rack'] = [deck.pop() for _ in range(14)] if len(deck) >= 14 else []
+            room['deck'] = deck
+            room['chat_logs'].append({'system': True, 'text': "🧩 루미큐브가 시작되었습니다! 참가자 전원에게 14장의 타일이 지급되었습니다."})
+
+        elif room['game_type'] == 'SEOTDA':
             room['dealer_ws'] = ws
             start_seotda_round(room)
 
         room['turn_start_time'] = time.time()
         turn_order_list = [{'rank': idx + 1, 'nickname': room['players'][s]['nickname'], 'color': room['players'][s]['color']} for idx, s in enumerate(room['turn_order'])]
         await broadcast_to_room(current_room_id, {'type': 'STARTING_DRAW', 'turn_order_list': turn_order_list, 'state': None})
+
+    elif msg_type == 'SUBMIT_TURN':
+        room = ROOMS.get(current_room_id)
+        if room and room['game_type'] == 'RUMMIKUB' and room['status'] == 'PLAYING':
+            current_ws = room['turn_order'][room['current_turn_index']]
+            if ws == current_ws:
+                player = room['players'][ws]
+                new_rack = data.get('rack', [])
+                new_table = data.get('table_sets', [])
+
+                if len(new_rack) >= len(player.get('rack', [])) and room['deck']:
+                    drawn_tile = room['deck'].pop()
+                    new_rack.append(drawn_tile)
+                    room['chat_logs'].append({'system': True, 'text': f"🃏 [{player['nickname']}]님이 타일 1장을 가져왔습니다."})
+                else:
+                    room['chat_logs'].append({'system': True, 'text': f"🧩 [{player['nickname']}]님이 타일 조합을 냈습니다."})
+
+                player['rack'] = new_rack
+                room['table_sets'] = new_table
+
+                if len(new_rack) == 0:
+                    room['chat_logs'].append({'system': True, 'text': f"🏆 축하합니다! [{player['nickname']}]님이 모든 타일을 털어 최종 우승하셨습니다!"})
+                    room['status'] = 'WAITING'
+                else:
+                    room['current_turn_index'] = (room['current_turn_index'] + 1) % len(room['turn_order'])
+                    room['turn_start_time'] = time.time()
+
+                await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
     elif msg_type == 'START_ROUND':
         room = ROOMS.get(current_room_id)
@@ -361,7 +398,6 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                 room['turn_start_time'] = time.time()
                 await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
-    # ★ 섯다 배팅액 정밀 계산 및 콜 금액 정돈 (무한 배팅 버그 해결) ★
     elif msg_type == 'SEOTDA_BET':
         room = ROOMS.get(current_room_id)
         if room and room['game_type'] == 'SEOTDA' and room['status'] == 'PLAYING':
@@ -405,7 +441,6 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                 room['betting_turns'] = room.get('betting_turns', 0) + 1
                 active_ws = [p_ws for p_ws, p in room['players'].items() if not p['is_folded']]
                 
-                # 1. 기권 승리 (1명만 살아남음)
                 if len(active_ws) == 1:
                     winner_ws = active_ws[0]
                     winner = room['players'][winner_ws]
@@ -414,7 +449,6 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                     room['chat_logs'].append({'system': True, 'text': f"🎉 모두 기권하여 [{winner['nickname']}]님이 {room['pot']} 칩을 획득했습니다!"})
                     room['status'] = 'SHOWDOWN'
                 else:
-                    # 2. 콜/배팅 종료 체크 (모든 생존자의 총 배팅 금액이 완전히 맞춰진 경우)
                     highest_bet = max(room['players'][aw]['current_bet'] for aw in active_ws)
                     all_bets_equal = all(room['players'][aw]['current_bet'] == highest_bet for aw in active_ws)
                     
@@ -436,6 +470,19 @@ async def process_client_msg(ws, current_player_id, data, current_room_id):
                         room['turn_start_time'] = time.time()
 
                 await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
+
+    elif msg_type == 'RESET_GAME':
+        room = ROOMS.get(current_room_id)
+        if room and ws in room['players'] and room['players'][ws]['is_host']:
+            room['status'] = 'WAITING'
+            if room['game_type'] == 'RUMMIKUB':
+                room['deck'] = []
+                room['table_sets'] = []
+                for p in room['players'].values():
+                    p['rack'] = []
+                    p['is_ready'] = False
+            room['chat_logs'].append({'system': True, 'text': "🔄 방장에 의해 대기실 상태로 리셋되었습니다."})
+            await broadcast_to_room(current_room_id, {'type': 'ROOM_UPDATED', 'state': None})
 
     elif msg_type == 'TOGGLE_READY':
         room = ROOMS.get(current_room_id)
