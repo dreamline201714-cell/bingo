@@ -1,4 +1,4 @@
-/* style_rummikub.css - Responsive Modal & Retro Dot Backdrop Fixed */
+/* style_rummikub.css - Visual Movement & Set Append Effect Added */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
 
 @font-face {
@@ -37,7 +37,6 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 
 #confetti-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
 
-/* 상단 레트로 플로팅 토스트 알림 바 */
 .toast-container {
     position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
     z-index: 10000; display: flex; flex-direction: column; gap: 8px;
@@ -98,35 +97,59 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 .arena-main { display: grid; grid-template-columns: 1fr 320px; gap: 16px; }
 .board-container { width: 100%; }
 
+/* 공유 테이블 판 */
 .rummikub-table-board {
     width: 100%; max-width: 500px; min-height: 280px; margin: 0 auto;
     background: var(--bg-surface); border: 3px solid var(--border-block);
-    box-shadow: var(--shadow-block); padding: 10px; display: flex; flex-wrap: wrap;
-    gap: 8px; align-content: flex-start;
+    box-shadow: var(--shadow-block); padding: 12px; display: flex; flex-wrap: wrap;
+    gap: 12px; align-content: flex-start;
 }
 
 .topic-words-panel { background: var(--bg-surface); border: 2px solid var(--border-block); padding: 12px; margin-top: 12px; box-shadow: var(--shadow-block); width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; }
-.topic-words-panel h4 { font-size: 0.85rem; margin-bottom: 8px; }
 
 .my-rack-container {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 6px;
-    min-height: 100px; padding: 8px; background: var(--bg-primary);
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 8px;
+    min-height: 100px; padding: 10px; background: var(--bg-primary);
     border: 2px solid var(--border-block); align-content: start;
 }
 
+/* 🧩 루미큐브 타일 시각적 연출 강화 */
 .rummi-tile {
     width: 100%; aspect-ratio: 1 / 1.35; background: #FFFDD0;
     border: 2px solid #000000; box-shadow: var(--shadow-block-sm);
     display: flex; align-items: center; justify-content: center;
-    font-size: clamp(0.85rem, 3vw, 1.1rem); font-weight: bold;
-    cursor: pointer; user-select: none;
+    font-size: clamp(0.9rem, 3.2vw, 1.2rem); font-weight: bold;
+    cursor: pointer; user-select: none; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s;
 }
-.rummi-tile.selected { border-color: #00AA00; transform: translateY(-3px); }
-.rummi-tile.tile-red { color: #E53935; } .rummi-tile.tile-blue { color: #1E88E5; }
-.rummi-tile.tile-black { color: #212121; } .rummi-tile.tile-orange { color: #FB8C00; }
+
+/* ★ 내 거치대에서 선택된 타일 효과 (위로 살짝 올라오고 강렬하게 번쩍임) ★ */
+.rummi-tile.selected {
+    border: 3px solid #00AA00 !important;
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 8px 12px rgba(0, 170, 0, 0.4);
+    z-index: 10;
+}
+
+.rummi-tile.tile-red { color: #E53935; } 
+.rummi-tile.tile-blue { color: #1E88E5; }
+.rummi-tile.tile-black { color: #212121; } 
+.rummi-tile.tile-orange { color: #FB8C00; }
 .rummi-tile.tile-joker { color: #8E44AD; }
 
-.tile-group-set { display: inline-flex; gap: 3px; padding: 4px; border: 2px solid var(--border-block); background: rgba(0, 0, 0, 0.04); }
+/* 공유 테이블 내 세트 묶음 디자인 */
+.tile-group-set {
+    display: inline-flex; align-items: center; gap: 4px; padding: 6px 8px;
+    border: 2px solid var(--border-block); background: rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-block-sm); cursor: pointer; transition: background 0.2s, border-color 0.2s;
+    position: relative;
+}
+.tile-group-set:hover { background: rgba(0, 170, 0, 0.1); border-color: #00AA00; }
+
+/* 세트 오른쪽 붙이기 안내 버튼 */
+.append-guide-tag {
+    font-size: 0.65rem; color: #00AA00; font-weight: bold; background: #E2EFDA;
+    border: 1px solid #00AA00; padding: 2px 4px; margin-left: 2px; white-space: nowrap;
+}
 
 .board-footer { margin-top: 16px; width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; margin-left: auto; margin-right: auto; }
 
@@ -155,7 +178,7 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 .chat-input { flex: 1; min-width: 0; border: 1px solid var(--border-block); padding: 6px; background: var(--bg-surface); color: var(--text-primary); outline: none; font-size: 0.8rem; }
 .chat-send-btn { flex-shrink: 0; border: 1px solid var(--border-block); background: var(--bg-primary); color: var(--text-primary); padding: 0 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 
-/* ★ 📱 모바일 완전 응답형 모달 팝업 구조 개편 ★ */
+/* 📱 모바일 완전 응답형 모달 팝업 구조 */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(0, 0, 0, 0.4);
@@ -166,7 +189,6 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
 }
 .modal-overlay.active { display: flex !important; }
 
-/* 모달 상자의 최대 높이를 85vh로 제한하고 flex 구조로 지정 */
 .modal-box {
     background: var(--bg-surface); color: var(--text-primary);
     border: 4px solid var(--border-block); box-shadow: 8px 8px 0px rgba(0,0,0,1);
@@ -174,7 +196,6 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
     display: flex; flex-direction: column; position: relative; box-sizing: border-box;
 }
 
-/* 헤더 고정 (flex-shrink: 0) */
 .modal-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 12px; border-bottom: 2px solid var(--border-block);
@@ -186,13 +207,11 @@ body { background: var(--bg-surface); color: var(--text-primary); min-height: 10
     font-size: 1.5rem; cursor: pointer; font-weight: bold; padding: 0 4px; line-height: 1;
 }
 
-/* 수직 스크롤 본문 영역 */
 .modal-body-scroll {
     flex: 1; overflow-y: auto !important; padding-right: 4px;
     -webkit-overflow-scrolling: touch;
 }
 
-/* 도움말 전용 CSS */
 .help-modal-box { max-width: 540px !important; }
 .help-modal-body { padding: 4px 2px; }
 .help-section { margin-bottom: 20px; }
