@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>철마스트리트 (CHEOLMA STREET)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDK (칼럼 및 대화 저장용) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3YXZ_53BQ8UmKXa397XGOWO0v1DfnR8U",
+      authDomain: "cheolma-d2aaa.firebaseapp.com",
+      databaseURL: "https://cheolma-d2aaa-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "cheolma-d2aaa",
+      storageBucket: "cheolma-d2aaa.firebasestorage.app",
+      messagingSenderId: "940141119321",
+      appId: "1:940141119321:web:b4835d2c20030a0ee82e48"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    
+    // DB 노드 분리 (채팅 / 게시판)
+    window.chatRef = ref(db, "chats");
+    window.postRef = ref(db, "posts");
+    window.dbPush = push;
+    window.onChildAdded = onChildAdded;
+  </script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandBlue: '#2563eb',
+            brandCyan: '#06b6d4',
+            darkBg: '#090d16',
+            cardBg: '#111827',
+            kakaoYellow: '#FEE500',
+            kakaoChatBg: '#BACEE0'
+          },
+          fontFamily: { sans: ['Pretendard', sans-serif] }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .fade-in-section {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
+    .chat-scroll::-webkit-scrollbar { width: 6px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans antialiased overflow-x-hidden">
+
+  <!-- 1. NAVIGATION BAR (모바일 반응형 햄버거 메뉴 추가) -->
+  <nav class="fixed top-0 left-0 w-full z-50 bg-darkBg/90 backdrop-blur-md border-b border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <span class="text-lg sm:text-xl font-black text-white tracking-wider">철마스트리트</span>
+        <span class="text-[10px] sm:text-xs font-mono text-brandCyan bg-brandCyan/10 px-2 py-0.5 rounded border border-brandCyan/20">CHEOLMA STREET</span>
+      </div>
+
+      <!-- 데스크톱 메뉴 -->
+      <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-400">
+        <a href="#about" class="hover:text-brandCyan transition-colors">운영진 프로필</a>
+        <a href="#market" class="hover:text-brandCyan transition-colors">실시간 주가</a>
+        <a href="#column" class="hover:text-brandCyan transition-colors">투자 칼럼</a>
+        <a href="#chat" class="hover:text-brandCyan transition-colors">토론방</a>
+      </div>
+
+      <!-- 모바일 햄버거 버튼 -->
+      <button onclick="toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white p-2">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 모바일 메뉴 드롭다운 -->
+    <div id="mobile-menu" class="hidden md:hidden bg-cardBg border-b border-gray-800 px-6 py-4 space-y-3 text-sm font-medium text-gray-300">
+      <a href="#about" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">운영진 프로필</a>
+      <a href="#market" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">실시간 주가</a>
+      <a href="#column" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">투자 칼럼</a>
+      <a href="#chat" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">토론방</a>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center pt-24 px-4 sm:px-6 overflow-hidden">
+    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-brandBlue/10 rounded-full blur-[100px] -z-10"></div>
+    <div class="max-w-4xl mx-auto text-center">
+      <span class="inline-block text-[10px] sm:text-xs font-bold tracking-widest text-brandCyan bg-brandCyan/10 px-3 py-1.5 rounded-full mb-4 border border-brandCyan/20">
+        CHEOLMA STREET FINANCIAL NETWORK
+      </span>
+      <h1 class="text-3xl sm:text-6xl font-extrabold text-white mb-4 leading-tight">
+        철마스트리트 데이터 센터
+      </h1>
+    </div>
+  </section>
+
+  <!-- 3. 운영진 프로필 -->
+  <section id="about" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
+    <div class="text-center mb-12 sm:mb-16">
+      <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">TEAM MEMBERS</h2>
+      <p class="text-2xl sm:text-3xl font-bold text-white">운영진 프로필</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
+        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
+          <span class="text-gray-500 text-xs">사진 영역</span>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-1">운영진 01</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">운영진 1 소개 레이아웃 스페이스입니다.</p>
+      </div>
+      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
+        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
+          <span class="text-gray-500 text-xs">사진 영역</span>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-1">운영진 02</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">운영진 2 소개 레이아웃 스페이스입니다.</p>
+      </div>
+      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
+        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
+          <span class="text-gray-500 text-xs">사진 영역</span>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-1">운영진 03</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">운영진 3 소개 레이아웃 스페이스입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 실시간 주가 확인 -->
+  <section id="market" class="py-16 sm:py-24 bg-gray-950 border-y border-gray-800/80 px-4 sm:px-6 fade-in-section">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10">
+        <div>
+          <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">MARKET WATCH</h2>
+          <p class="text-2xl sm:text-3xl font-bold text-white">실시간 증시 데이터</p>
+        </div>
+        <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 mt-4 md:mt-0 w-full sm:w-auto">
+          <button id="btn-kr" onclick="switchMarket('KR')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-brandBlue text-white transition-all">국내 증시</button>
+          <button id="btn-us" onclick="switchMarket('US')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-400 hover:text-white transition-all">미국 증시</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-center">
+        <div id="stock-list" class="space-y-3 sm:space-y-4"></div>
+        <div class="lg:col-span-2 bg-cardBg border border-gray-800 p-4 sm:p-6 rounded-2xl">
+          <div class="h-56 sm:h-64 w-full"><canvas id="marketChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 투자 칼럼 & 게시판 (Firebase 실시간 글쓰기 기능 연동) -->
+  <section id="column" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-12">
+      <div>
+        <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">INSIGHTS</h2>
+        <p class="text-2xl sm:text-3xl font-bold text-white">투자 칼럼 & 오피니언</p>
+      </div>
+      <button onclick="openPostModal()" class="mt-4 sm:mt-0 bg-brandBlue hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors">
+        + 칼럼 글쓰기
+      </button>
+    </div>
+
+    <!-- 실시간 글 등록 영역 -->
+    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Firebase 수신 데이터가 여기에 등록됨 -->
+    </div>
+  </section>
+
+  <!-- 글쓰기 모달 창 -->
+  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-cardBg border border-gray-800 w-full max-w-lg rounded-2xl p-6 relative">
+      <h3 class="text-lg font-bold text-white mb-4">새 칼럼/오피니언 작성</h3>
+      <div class="space-y-3">
+        <input type="text" id="post-category" placeholder="카테고리 (예: 시황 분석, 퀀트 연구)" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
+        <input type="text" id="post-author" placeholder="작성자 이름" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
+        <input type="text" id="post-title" placeholder="칼럼 제목" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
+        <textarea id="post-content" rows="4" placeholder="칼럼 요약 내용 입력..." class="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-xs text-white outline-none focus:border-brandCyan resize-none"></textarea>
+      </div>
+      <div class="flex justify-end space-x-2 mt-6">
+        <button onclick="closePostModal()" class="bg-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs">취소</button>
+        <button onclick="publishPost()" class="bg-brandCyan text-darkBg font-bold px-4 py-2 rounded-lg text-xs">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 카카오톡 실시간 토론방 -->
+  <section id="chat" class="py-16 sm:py-24 bg-gray-950 border-t border-gray-800 px-4 sm:px-6 fade-in-section">
+    <div class="max-w-2xl mx-auto">
+      <div class="bg-kakaoChatBg rounded-2xl overflow-hidden shadow-2xl border border-gray-700 flex flex-col h-[480px] sm:h-[500px]">
+        
+        <div class="bg-[#A9BDCE] px-4 sm:px-5 py-3 border-b border-black/10 flex items-center justify-between text-gray-900">
+          <div>
+            <h4 class="font-bold text-xs sm:text-sm">철마스트리트 실시간 토론방</h4>
+            <span class="text-[10px] text-gray-600">구글 클라우드 동기화 됨</span>
+          </div>
+          <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+        </div>
+
+        <div id="chat-messages" class="flex-1 p-3 sm:p-4 overflow-y-auto chat-scroll space-y-4 text-xs text-gray-900">
+          <div class="text-center my-1">
+            <span class="bg-black/10 text-gray-700 text-[10px] px-3 py-1 rounded-full">구글 클라우드 DB와 연동되어 대화가 보존됩니다.</span>
+          </div>
+        </div>
+
+        <div class="bg-white p-2.5 sm:p-3 border-t border-gray-200 flex items-center space-x-2">
+          <input type="text" id="chat-id" placeholder="ID" class="w-16 sm:w-20 bg-gray-100 border border-gray-300 rounded-lg px-2 py-2 text-xs text-gray-800 outline-none focus:border-brandBlue">
+          <input type="text" id="chat-txt" placeholder="메시지 입력..." class="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-800 outline-none focus:border-brandBlue" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
+          <button onclick="pushMessageToCloud()" class="bg-kakaoYellow hover:bg-yellow-400 text-gray-900 font-bold px-3 sm:px-4 py-2 rounded-lg text-xs transition-colors">전송</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-8 text-center text-xs text-gray-600">&copy; 2026 CHEOLMA STREET.</footer>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function openPostModal() { document.getElementById('post-modal').classList.remove('hidden'); }
+    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const sections = document.querySelectorAll('.fade-in-section');
+      const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('is-visible') }), {threshold:0.1});
+      sections.forEach(s => obs.observe(s));
+      switchMarket('KR');
+
+      // Firebase 실시간 리스너 작동 (채팅 & 게시글)
+      setTimeout(() => {
+        if(window.onChildAdded) {
+          // 채팅 동기화
+          if(window.chatRef) {
+            window.onChildAdded(window.chatRef, (data) => {
+              const msgObj = data.val();
+              displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
+            });
+          }
+          // 게시글 동기화
+          if(window.postRef) {
+            window.onChildAdded(window.postRef, (data) => {
+              const p = data.val();
+              displayPostCard(p.category, p.author, p.title, p.content, p.date);
+            });
+          }
+        }
+      }, 1200);
+    });
+
+    // 칼럼 등록 로직
+    function publishPost() {
+      const cat = document.getElementById('post-category').value.trim() || '일반 칼럼';
+      const author = document.getElementById('post-author').value.trim() || '익명 칼럼니스트';
+      const title = document.getElementById('post-title').value.trim();
+      const content = document.getElementById('post-content').value.trim();
+
+      if (!title || !content || !window.dbPush || !window.postRef) return;
+
+      const dateStr = new Date().toLocaleDateString();
+
+      window.dbPush(window.postRef, {
+        category: cat,
+        author: author,
+        title: title,
+        content: content,
+        date: dateStr
+      });
+
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-content').value = '';
+      closePostModal();
+    }
+
+    function displayPostCard(cat, author, title, content, date) {
+      const grid = document.getElementById('post-grid');
+      const cardHtml = `
+        <article class="bg-cardBg border border-gray-800 rounded-2xl p-6 flex flex-col justify-between hover:border-gray-700 transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="bg-brandCyan/10 text-brandCyan text-xs font-semibold px-2.5 py-1 rounded-full border border-brandCyan/20">${cat}</span>
+              <span class="text-gray-500 text-xs">${date}</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2 leading-snug">${title}</h3>
+            <p class="text-gray-400 text-sm leading-relaxed">${content}</p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-gray-800/80 text-xs text-gray-500">
+            작성자: ${author}
+          </div>
+        </article>
+      `;
+      grid.insertAdjacentHTML('afterbegin', cardHtml);
+    }
+
+    function pushMessageToCloud() {
+      const idIn = document.getElementById('chat-id');
+      const txtIn = document.getElementById('chat-txt');
+      const nickname = idIn.value.trim() || '익명';
+      const message = txtIn.value.trim();
+
+      if (!message || !window.dbPush || !window.chatRef) return;
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      window.dbPush(window.chatRef, {
+        nickname: nickname,
+        message: message,
+        timestamp: timeStr
+      });
+      txtIn.value = '';
+    }
+
+    function displayMessageNode(name, text, time) {
+      const chatWin = document.getElementById('chat-messages');
+      const nodeHtml = `
+        <div class="flex items-start space-x-2">
+          <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-700 text-[10px]">${name.substring(0,2)}</div>
+          <div>
+            <span class="text-[11px] text-gray-600 block mb-0.5">${name}</span>
+            <div class="flex items-end space-x-1">
+              <div class="bg-white p-2 rounded-r-xl rounded-bl-xl shadow-sm max-w-xs leading-normal text-gray-950">${text}</div>
+              <span class="text-[9px] text-gray-500">${time}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      chatWin.insertAdjacentHTML('beforeend', nodeHtml);
+      chatWin.scrollTop = chatWin.scrollHeight;
+    }
+
+    let currentChart = null;
+    function switchMarket(t) {
+      const kr = [{name:"삼성전자", price:"78,500 KRW"}, {name:"SK하이닉스", price:"182,400 KRW"}];
+      const us = [{name:"NVIDIA (NVDA)", price:"128.50 USD"}, {name:"Apple (AAPL)", price:"224.30 USD"}];
+      const list = document.getElementById('stock-list');
+      const targetData = t === 'KR' ? kr : us;
+
+      list.innerHTML = targetData.map(i => `
+        <div class="bg-cardBg border border-gray-800 p-4 rounded-xl flex justify-between items-center">
+          <div><h4 class="font-bold text-white text-sm">${i.name}</h4></div>
+          <div class="text-right"><div class="font-bold text-sm text-gray-200">${i.price}</div></div>
+        </div>
+      `).join('');
+
+      const ctx = document.getElementById('marketChart').getContext('2d');
+      if (currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: ['09:00', '11:00', '13:00', '15:00'], datasets: [{ data: t==='KR'?[2620, 2630, 2650, 2684]:[17400, 17500, 17680, 17825], borderColor: '#06b6d4', borderWidth: 2, fill: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+  </script>
+</body>
+</html>
