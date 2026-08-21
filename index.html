@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CHEOLMA STREET v4.0.2</title>
 
+  <!-- Google Fonts & Tailwind CSS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,700;1,400&family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
@@ -43,7 +44,11 @@
     .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.4; }
     .tab-content { display: none; }
     .tab-content.active { display: flex; }
+    .stock-item { cursor: pointer; transition: all 0.15s ease; }
+    .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
+    .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
 
+    /* 모바일 스크롤 지원 탭 스타일 */
     .nav-btn {
       background-color: #121212;
       border: 1px solid #333333;
@@ -52,8 +57,18 @@
       white-space: nowrap;
       min-width: 80px;
     }
-    .nav-btn:hover { border-color: #ff9900; color: #ff9900; background-color: #1a1a1a; }
-    .nav-btn.active { background-color: #261d0f; border-color: #ff9900; color: #ff9900; font-weight: bold; box-shadow: inset 0 -2px 0 #ff9900; }
+    .nav-btn:hover {
+      border-color: #ff9900;
+      color: #ff9900;
+      background-color: #1a1a1a;
+    }
+    .nav-btn.active {
+      background-color: #261d0f;
+      border-color: #ff9900;
+      color: #ff9900;
+      font-weight: bold;
+      box-shadow: inset 0 -2px 0 #ff9900;
+    }
   </style>
 
   <!-- Firebase SDK -->
@@ -147,7 +162,7 @@
       <span><strong class="text-bbAmber">MSFT</strong> 448.90 <span class="text-bbGreen">+1.1%</span></span>
     </div>
 
-    <!-- 상단 탭 -->
+    <!-- 모바일 스크롤 완벽 대응 상단 탭 -->
     <nav class="bg-black flex overflow-x-auto gap-1 text-center mt-1 font-mono text-xs px-1 no-scrollbar">
       <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F1</span><span>[OVERVIEW]</span></button>
       <button onclick="switchTab('market')" id="nav-market" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F2</span><span>[MARKET]</span></button>
@@ -158,11 +173,12 @@
   </header>
 
   <!-- MAIN TAB CONTENT CONTAINER -->
-  <main class="flex-1 overflow-x-hidden overflow-y-auto p-2 relative bg-bbBlack">
+  <main class="flex-1 overflow-x-hidden overflow-y-auto lg:overflow-hidden p-2 relative bg-bbBlack">
     
     <!-- 1. OVERVIEW TAB -->
     <section id="tab-overview" class="tab-content active h-full flex-col overflow-y-auto">
       <div class="w-full max-w-7xl mx-auto flex flex-col gap-3 p-1">
+        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0">
           <div class="lg:col-span-2 bb-box p-3 flex flex-col justify-between">
             <div class="bb-box-header -m-3 mb-2">
@@ -213,13 +229,36 @@
             </div>
           </div>
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0">
+          <div class="lg:col-span-2 bb-box p-3 flex flex-col justify-between">
+            <div class="bb-box-header -m-3 mb-3">
+              <span>LATEST_EXECUTIVE_BRIEFING</span>
+              <span class="text-bbAmber text-[9px]">LIVE_FEED</span>
+            </div>
+            <div id="latest-briefing-card" class="p-3 bg-black border border-bbBorder rounded space-y-2">
+              <div class="text-gray-500 text-xs font-mono py-4 text-center">&gt; NO BRIEFING POSTED YET. WRITE A COLUMN IN F4 TAB.</div>
+            </div>
+          </div>
+
+          <div class="bb-box p-3 flex flex-col justify-between">
+            <div class="bb-box-header -m-3 mb-2">
+              <span>ALGO_EXECUTION_LOGS</span>
+              <span class="text-bbGreen text-[9px]">SYSTEM_LIVE</span>
+            </div>
+            <div id="fund-log-stream" class="bg-black border border-bbBorder p-2 text-[10px] font-mono text-gray-300 space-y-1.5 h-28 overflow-y-auto">
+              <div class="text-gray-600">&gt; NO LOGS RECORDED YET.</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- 2. MARKET TAB (HTS 스타일 시세 카드 3x2) -->
+    <!-- 2. MARKET TAB (수정됨: 3x2 대시보드 및 실시간 토스증권 API 파이프라인) -->
     <section id="tab-market" class="tab-content h-full flex-col gap-2">
-      <!-- 검색바 & 기능 버튼 -->
-      <div class="bb-box p-2 flex flex-wrap items-center justify-between gap-2 font-mono">
+      <!-- 검색바 및 API 토글 컨트롤 바 -->
+      <div class="bb-box p-2 flex flex-wrap items-center justify-between gap-2 font-mono shrink-0">
         <div class="flex items-center gap-2 flex-1 min-w-[280px]">
           <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
           <input type="text" id="market-search-input" placeholder="종목코드/명 입력 (예: 005930, 삼성전자, NVDA)..." 
@@ -238,7 +277,7 @@
         </div>
       </div>
 
-      <!-- 3x2 차트 카드 그리드 -->
+      <!-- 3x2 대시보드 차트 그리드 -->
       <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto">
         
         <!-- CARD 1: 삼성전자 -->
@@ -253,9 +292,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-005930"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-005930"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-005930" class="text-gray-200">71,500</span></div>
             <div>고가: <span id="high-005930" class="text-bbRed">72,800</span></div>
@@ -276,9 +313,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-000660"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-000660"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-000660" class="text-gray-200">186,000</span></div>
             <div>고가: <span id="high-000660" class="text-bbRed">187,200</span></div>
@@ -299,9 +334,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-NVDA"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-NVDA"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-NVDA" class="text-gray-200">125.80</span></div>
             <div>고가: <span id="high-NVDA" class="text-bbRed">129.40</span></div>
@@ -322,9 +355,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-AAPL"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-AAPL"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-AAPL" class="text-gray-200">226.00</span></div>
             <div>고가: <span id="high-AAPL" class="text-bbRed">226.50</span></div>
@@ -345,9 +376,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-MSFT"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-MSFT"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-MSFT" class="text-gray-200">444.00</span></div>
             <div>고가: <span id="high-MSFT" class="text-bbRed">450.20</span></div>
@@ -368,9 +397,7 @@
             </div>
             <span class="text-[9px] bg-bbAmber/20 text-bbAmber border border-bbAmber/40 px-1 font-mono">REALTIME</span>
           </div>
-          <div class="flex-1 relative my-1">
-            <canvas id="chart-TSLA"></canvas>
-          </div>
+          <div class="flex-1 relative my-1"><canvas id="chart-TSLA"></canvas></div>
           <div class="grid grid-cols-4 gap-1 pt-1 border-t border-bbBorder text-[9px] font-mono text-gray-400">
             <div>시가: <span id="open-TSLA" class="text-gray-200">233.00</span></div>
             <div>고가: <span id="high-TSLA" class="text-bbRed">242.00</span></div>
@@ -382,82 +409,442 @@
       </div>
     </section>
 
-    <!-- 3. TEAM TAB -->
+    <!-- 3. TEAM / MEMBERS TAB -->
     <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4">
-        <div class="bb-box-header mb-3 shrink-0"><span>OPERATIONAL_CORE // LEADERSHIP_PROFILES</span><span>SYS_VER: 4.0</span></div>
+        <div class="bb-box-header mb-3 shrink-0">
+          <span>OPERATIONAL_CORE // LEADERSHIP_PROFILES</span>
+          <span>SYS_VER: 4.0</span>
+        </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto w-full py-2">
-          <div class="bb-box p-4 flex flex-col justify-between">
-            <img src="https://cheolma-backend.vercel.app/images/BOGEO.PNG" alt="복어왕" class="w-full aspect-square object-cover mb-3">
-            <div class="text-bbAmber font-bold">[USER_01] 복어왕</div>
+          <!-- MEMBER 01: 복어왕 -->
+          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
+            <div>
+              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
+                <div class="absolute inset-0 bg-bbGreen/10 z-10 pointer-events-none"></div>
+                <img src="https://cheolma-backend.vercel.app/images/BOGEO.PNG" alt="복어왕" 
+                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbGreen font-mono z-20 border border-bbBorder">
+                  IMG_ID: BOGEO_01
+                </div>
+              </div>
+
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_01] 복어왕</div>
+              <div class="text-xs text-bbGreen mb-2">&gt; ROLE: CHIEF EXEC / STRATEGIST</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">철마스트리트 총괄 리더십. 펀드 포트폴리오 제어 및 매크로 지표 제어 권한 보유.</p>
+            </div>
+            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
+              <span>STATUS: ONLINE</span>
+              <span class="text-bbAmber">CLEARANCE: L5</span>
+            </div>
           </div>
-          <div class="bb-box p-4 flex flex-col justify-between">
-            <img src="https://cheolma-backend.vercel.app/images/AKUMA.PNG" alt="아쿠마" class="w-full aspect-square object-cover mb-3">
-            <div class="text-bbAmber font-bold">[USER_02] 아쿠마</div>
+
+          <!-- MEMBER 02: 아쿠마 -->
+          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
+            <div>
+              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
+                <div class="absolute inset-0 bg-bbBlue/10 z-10 pointer-events-none"></div>
+                <img src="https://cheolma-backend.vercel.app/images/AKUMA.PNG" alt="아쿠마" 
+                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">
+                  IMG_ID: AKUMA_02
+                </div>
+              </div>
+
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_02] 아쿠마</div>
+              <div class="text-xs text-bbBlue mb-2">&gt; ROLE: QUANT ALGO ENGINEER</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩(HFT) 파이프라인 수식 알고리즘 모듈 구축.</p>
+            </div>
+            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
+              <span>STATUS: PROCESSING</span>
+              <span class="text-bbBlue">CLEARANCE: L4</span>
+            </div>
           </div>
-          <div class="bb-box p-4 flex flex-col justify-between">
-            <img src="https://cheolma-backend.vercel.app/images/TURTLE.png" alt="터틀맨" class="w-full aspect-square object-cover mb-3">
-            <div class="text-bbAmber font-bold">[USER_03] 터틀맨</div>
+
+          <!-- MEMBER 03: 터틀맨 -->
+          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
+            <div>
+              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
+                <div class="absolute inset-0 bg-bbAmber/10 z-10 pointer-events-none"></div>
+                <img src="https://cheolma-backend.vercel.app/images/TURTLE.png" alt="터틀맨" 
+                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">
+                  IMG_ID: TURTLE_03
+                </div>
+              </div>
+
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_03] 터틀맨</div>
+              <div class="text-xs text-bbAmber mb-2">&gt; ROLE: INFRA & DATA PIPELINE</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 데이터 수집 크롤러 모듈 및 커뮤니티 노드 관리.</p>
+            </div>
+            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
+              <span>STATUS: STANDBY</span>
+              <span class="text-bbAmber">CLEARANCE: L4</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 4. COLUMN TAB -->
+    <!-- 4. INSIGHT COLUMN TAB -->
     <section id="tab-column" class="tab-content h-full flex-col">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4 overflow-y-auto">
-        <div class="bb-box-header mb-3 shrink-0"><span>INVESTMENT_RESEARCH_COLUMN</span></div>
-        <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div class="bb-box-header mb-3 shrink-0">
+          <span>INVESTMENT_RESEARCH_COLUMN</span>
+          <button onclick="openPostModal()" class="bg-bbAmber text-black text-[10px] font-bold px-2 py-0.5 hover:bg-yellow-400">+ NEW_POST</button>
+        </div>
+        <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3"></div>
       </div>
     </section>
 
-    <!-- 5. CHAT TAB -->
+    <!-- 5. IRC COMMUNITY CHAT TAB -->
     <section id="tab-chat" class="tab-content h-full flex-col">
       <div class="bb-box h-full flex flex-col">
-        <div class="bb-box-header"><span>IRC_CHAT // #CHEOLMA_REALTIME</span></div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-2 space-y-1 text-xs font-mono bg-black"></div>
+        <div class="bb-box-header">
+          <span>IRC_CHAT // #CHEOLMA_REALTIME</span>
+          <span class="text-bbGreen font-normal">SSL</span>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-2 space-y-1 text-xs font-mono bg-black">
+          <div class="text-gray-600 text-[10px] border-b border-bbBorder pb-1">&gt; CONNECTED TO NETWORK SERVER NODE</div>
+        </div>
+        <div class="bg-bbPanel p-2 border-t border-bbBorder flex items-center space-x-2">
+          <span class="text-bbAmber text-xs font-bold">&gt;_</span>
+          <input type="text" id="chat-id" placeholder="ID" readonly class="w-20 bg-black/50 border border-bbBorder px-1.5 py-1 text-xs text-bbAmber outline-none font-bold">
+          <input type="text" id="chat-txt" placeholder="Input message..." class="flex-1 bg-black border border-bbBorder px-2 py-1 text-xs text-bbGreen outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
+          <button onclick="pushMessageToCloud()" class="bg-bbAmber text-black font-bold text-xs px-3 py-1">SEND</button>
+        </div>
       </div>
     </section>
   </main>
 
+  <!-- WRITE COLUMN MODAL -->
+  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-xl p-4 font-mono">
+      <div class="bb-box-header -m-4 mb-4">
+        <span>WRITE_RESEARCH_POST</span>
+        <button onclick="closePostModal()" class="text-bbRed font-bold">X</button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] text-gray-500 block mb-1">CATEGORY</label>
+            <input type="text" id="post-category" placeholder="QUANT / MACRO" class="w-full bg-black border border-bbBorder p-2 text-xs text-bbAmber outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-500 block mb-1">AUTHOR</label>
+            <input type="text" id="post-author" readonly class="w-full bg-black/50 border border-bbBorder p-2 text-xs text-bbAmber outline-none cursor-not-allowed font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 block mb-1">TITLE</label>
+          <input type="text" id="post-title" placeholder="ENTER SUBJECT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-white outline-none">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 block mb-1">CONTENT</label>
+          <textarea id="post-content" rows="6" placeholder="WRITE DETAILED REPORT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-gray-300 outline-none resize-none font-sans"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 mt-4">
+        <button onclick="closePostModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
+        <button onclick="publishPost()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">PUBLISH</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 복어왕 전용 펀드 구성요소 편집 모달 -->
+  <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-md p-4 font-mono">
+      <div class="bb-box-header -m-4 mb-4">
+        <span>EDIT_CHEOLMA_FUND_PORTFOLIO</span>
+        <button onclick="closeFundModal()" class="text-bbRed font-bold">X</button>
+      </div>
+      <div class="space-y-3">
+        <p class="text-[10px] text-gray-400">&gt; 각 종목의 구성 비중(%)을 설정하세요.</p>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">NVDA:</span><input type="number" id="weight-nvda" value="40" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">BTC:</span><input type="number" id="weight-btc" value="30" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">AAPL:</span><input type="number" id="weight-aapl" value="20" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">CASH:</span><input type="number" id="weight-cash" value="10" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 mt-6">
+        <button onclick="closeFundModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
+        <button onclick="updateFundPortfolio()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">APPLY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스 API 전용 인라인 모달 패널 -->
+  <div id="toss-data-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-2xl p-4 font-mono flex flex-col max-h-[80vh]">
+      <div class="bb-box-header -m-4 mb-4">
+        <span id="modal-title">TOSS_INVEST_DATA_VIEWER</span>
+        <button onclick="closeTossModal()" class="text-bbRed font-bold hover:text-white">X</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto my-2">
+        <pre id="modal-content" class="text-xs text-bbGreen bg-black p-3 border border-bbBorder overflow-x-auto whitespace-pre-wrap font-mono"></pre>
+      </div>
+
+      <div class="flex justify-end mt-2">
+        <button onclick="closeTossModal()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1.5 hover:bg-yellow-400">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT CONTROLLER -->
   <script>
     const AUTH_CODES = {
-      "BOGEO-0624": { name: "복어왕", role: "ADMIN" },
-      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR" },
-      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR" }
+      "BOGEO-0624": { name: "복어왕", role: "ADMIN", level: "L5" },
+      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR", level: "L4" },
+      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR", level: "L4" }
     };
 
     let currentUser = null;
+    let overviewChart = null;
     let multiCharts = {};
     const BACKEND_URL = "https://cheolma-backend.vercel.app";
     const INITIAL_SYMBOLS = ["005930", "000660", "NVDA", "AAPL", "MSFT", "TSLA"];
 
     function authenticateUser(savedCode = null) {
       const input = savedCode || document.getElementById('auth-code-input').value.trim();
+      
       if (AUTH_CODES[input]) {
         currentUser = AUTH_CODES[input];
         localStorage.setItem("cheolma_auth_code", input);
-        document.getElementById('intro-screen').style.display = 'none';
+        
+        document.getElementById('user-badge').innerText = `[${currentUser.name}]`;
+        document.getElementById('chat-id').value = currentUser.name;
+        document.getElementById('post-author').value = currentUser.name;
+        
+        if (currentUser.role === "ADMIN") {
+          document.getElementById('admin-fund-btn').classList.remove('hidden');
+        } else {
+          document.getElementById('admin-fund-btn').classList.add('hidden');
+        }
+
+        const intro = document.getElementById('intro-screen');
+        intro.style.transition = 'opacity 0.5s ease';
+        intro.style.opacity = '0';
+        setTimeout(() => intro.style.display = 'none', 500);
+      } else {
+        if (!savedCode) {
+          document.getElementById('auth-error').classList.remove('hidden');
+        }
+      }
+    }
+
+    function logoutUser() {
+      localStorage.removeItem("cheolma_auth_code");
+      location.reload();
+    }
+
+    function openPostModal() {
+      document.getElementById('post-author').value = currentUser ? currentUser.name : "GUEST";
+      document.getElementById('post-modal').classList.remove('hidden');
+    }
+    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
+
+    function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
+    function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
+
+    function updateFundPortfolio() {
+      if (!window.dbSet || !window.fundRef || !window.dbPush || !window.logsRef) return;
+
+      const nvda = parseFloat(document.getElementById('weight-nvda').value) || 0;
+      const btc = parseFloat(document.getElementById('weight-btc').value) || 0;
+      const aapl = parseFloat(document.getElementById('weight-aapl').value) || 0;
+      const cash = parseFloat(document.getElementById('weight-cash').value) || 0;
+      const updater = currentUser ? currentUser.name : "ADMIN";
+      const nowTime = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+      window.dbSet(window.fundRef, {
+        nvda: nvda, btc: btc, aapl: aapl, cash: cash,
+        updatedBy: updater,
+        timestamp: new Date().toISOString()
+      });
+
+      window.dbPush(window.logsRef, {
+        logText: `REBALANCED: NVDA ${nvda}%, BTC ${btc}%, AAPL ${aapl}%, CASH ${cash}%`,
+        author: updater,
+        time: nowTime
+      });
+
+      closeFundModal();
+    }
+
+    function listenFundUpdates() {
+      if (window.onValue && window.fundRef) {
+        window.onValue(window.fundRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            const baseValue = 1000000;
+            const simulatedGain = (data.nvda * 0.024) + (data.btc * 0.018) + (data.aapl * -0.008);
+            const totalNav = baseValue * (1 + (simulatedGain / 100));
+            
+            const navStr = `$${Math.round(totalNav).toLocaleString()}`;
+            const ratioStr = `${simulatedGain >= 0 ? '+' : ''}${simulatedGain.toFixed(2)}%`;
+            
+            document.getElementById('fund-nav-text').innerText = navStr;
+            document.getElementById('fund-ratio-text').innerText = ratioStr;
+            document.getElementById('fund-ratio-text').className = simulatedGain >= 0 ? 'text-bbGreen' : 'text-bbRed';
+
+            document.getElementById('overview-nav').innerText = navStr;
+            document.getElementById('overview-ratio').innerText = ratioStr;
+            document.getElementById('overview-ratio').className = simulatedGain >= 0 ? 'text-base font-bold text-bbGreen font-mono' : 'text-base font-bold text-bbRed font-mono';
+
+            document.getElementById('bar-nvda').style.width = `${data.nvda}%`;
+            document.getElementById('bar-nvda-text').innerText = `${data.nvda}%`;
+            document.getElementById('bar-btc').style.width = `${data.btc}%`;
+            document.getElementById('bar-btc-text').innerText = `${data.btc}%`;
+            document.getElementById('bar-aapl').style.width = `${data.aapl}%`;
+            document.getElementById('bar-aapl-text').innerText = `${data.aapl}%`;
+            document.getElementById('bar-cash').style.width = `${data.cash}%`;
+            document.getElementById('bar-cash-text').innerText = `${data.cash}%`;
+            document.getElementById('fund-updated-by').innerText = data.updatedBy || 'ADMIN';
+
+            updateOverviewChart(totalNav);
+          }
+        });
       }
     }
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+      
       document.getElementById(`tab-${tabId}`).classList.add('active');
       document.getElementById(`nav-${tabId}`).classList.add('active');
     }
 
+    function updateClock() {
+      document.getElementById('sys-clock').innerText = new Date().toUTCString().split(' ')[4] + " UTC";
+    }
+    setInterval(updateClock, 1000);
+
     document.addEventListener("DOMContentLoaded", () => {
       const savedCode = localStorage.getItem("cheolma_auth_code");
-      if (savedCode) authenticateUser(savedCode);
+      if (savedCode) {
+        authenticateUser(savedCode);
+      }
+
+      initParticleCanvas();
+      renderOverviewChart();
       initMultiCharts();
 
+      // 3초마다 토스증권 API 기반으로 실시간 시세 및 X축 시간 갱신
       setInterval(() => {
         INITIAL_SYMBOLS.forEach(symbol => fetchStockPrice(symbol));
       }, 3000);
+
+      setTimeout(() => {
+        listenFundUpdates();
+        
+        if(window.onChildAdded && window.chatRef) {
+          window.onChildAdded(window.chatRef, (data) => {
+            const msgObj = data.val();
+            displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
+          });
+        }
+        
+        if(window.onChildAdded && window.postRef) {
+          window.onChildAdded(window.postRef, (data) => {
+            const p = data.val();
+            displayPostCard(p.category, p.author, p.title, p.content, p.date);
+            updateMainOverviewBriefing(p.category, p.author, p.title, p.content, p.date);
+          });
+        }
+
+        if(window.onChildAdded && window.logsRef) {
+          const logStream = document.getElementById('fund-log-stream');
+          let isFirstLog = true;
+          window.onChildAdded(window.logsRef, (data) => {
+            if (isFirstLog) { logStream.innerHTML = ''; isFirstLog = false; }
+            const l = data.val();
+            logStream.insertAdjacentHTML('afterbegin', `<div><span class="text-gray-500">[${l.time}]</span> <span class="text-bbGreen">EXEC:</span> ${l.logText} <span class="text-gray-500">BY ${l.author}</span></div>`);
+          });
+        }
+      }, 1200);
     });
 
+    function initParticleCanvas() {
+      const canvas = document.getElementById('intro-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+
+      const particles = Array.from({length: 40}, () => ({
+        x: Math.random() * width, y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, size: Math.random() * 2 + 1
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+          ctx.fillStyle = '#ff9900'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    function renderOverviewChart() {
+      const ctx = document.getElementById('overviewChart').getContext('2d');
+      overviewChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['INIT', 'STEP 1', 'STEP 2', 'STEP 3', 'STEP 4', 'CURRENT'],
+          datasets: [{
+            label: 'NAV ($)',
+            data: [1000000, 1000000, 1000000, 1000000, 1000000, 1000000],
+            borderColor: '#00ff66',
+            backgroundColor: 'rgba(0, 255, 102, 0.05)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2,
+            pointBackgroundColor: '#00ff66'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#222222' }, ticks: { color: '#666666', font: { size: 9 } } },
+            y: { grid: { color: '#222222' }, ticks: { color: '#666666', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function updateOverviewChart(newNav) {
+      if (!overviewChart) return;
+      const data = overviewChart.data.datasets[0].data;
+      data.shift();
+      data.push(Math.round(newNav));
+      overviewChart.update();
+    }
+
+    function showTossModal(title, jsonContent) {
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-content').innerText = JSON.stringify(jsonContent, null, 2);
+      document.getElementById('toss-data-modal').classList.remove('hidden');
+    }
+
+    function closeTossModal() {
+      document.getElementById('toss-data-modal').classList.add('hidden');
+    }
+
+    /* 이중 차트(가격 라인 + 거래량 막대) 초기화 */
     function initMultiCharts() {
       INITIAL_SYMBOLS.forEach(symbol => {
         const canvas = document.getElementById(`chart-${symbol}`);
@@ -504,17 +891,8 @@
             plugins: { legend: { display: false } },
             scales: {
               x: { grid: { display: false }, ticks: { color: '#555555', font: { size: 8 } } },
-              y: { 
-                position: 'right',
-                grid: { color: '#1a1a1a' }, 
-                ticks: { color: '#666666', font: { size: 8 } } 
-              },
-              yVolume: {
-                position: 'left',
-                display: false,
-                max: 1500,
-                grid: { display: false }
-              }
+              y: { position: 'right', grid: { color: '#1a1a1a' }, ticks: { color: '#666666', font: { size: 8 } } },
+              yVolume: { position: 'left', display: false, max: 1500, grid: { display: false } }
             }
           }
         });
@@ -589,8 +967,8 @@
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/orderbook/${symbol}`);
         const data = await res.json();
-        alert(`[호가 정보 (Orderbook)]\n${JSON.stringify(data.result || data, null, 2)}`);
-      } catch (err) { alert(`호가 조회 실패: ${err.message}`); }
+        showTossModal(`ORDERBOOK DATA [${symbol}]`, data);
+      } catch (err) { showTossModal(`ERROR [${symbol}]`, { error: err.message }); }
     }
 
     async function fetchInvestorTrading() {
@@ -598,24 +976,24 @@
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/investor-trading/${symbol}`);
         const data = await res.json();
-        alert(`[투자자 매매동향]\n${JSON.stringify(data.result || data, null, 2)}`);
-      } catch (err) { alert(`매매동향 조회 실패: ${err.message}`); }
+        showTossModal(`INVESTOR TRADING DATA [${symbol}]`, data);
+      } catch (err) { showTossModal(`ERROR [${symbol}]`, { error: err.message }); }
     }
 
     async function fetchExchangeRate() {
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/exchange-rate`);
         const data = await res.json();
-        alert(`[실시간 KRW/USD 환율]\n${JSON.stringify(data.result || data, null, 2)}`);
-      } catch (err) { alert(`환율 조회 실패: ${err.message}`); }
+        showTossModal("EXCHANGE RATE DATA (KRW/USD)", data);
+      } catch (err) { showTossModal("ERROR", { error: err.message }); }
     }
 
     async function fetchRankings() {
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/rankings`);
         const data = await res.json();
-        alert(`[실시간 주식 랭킹]\n${JSON.stringify(data.result || data, null, 2)}`);
-      } catch (err) { alert(`랭킹 조회 실패: ${err.message}`); }
+        showTossModal("STOCK RANKINGS DATA", data);
+      } catch (err) { showTossModal("ERROR", { error: err.message }); }
     }
 
     async function searchStockSymbol() {
@@ -625,14 +1003,73 @@
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/stock/${query}`);
         const data = await res.json();
+        showTossModal(`STOCK INFO [${query}]`, data);
+      } catch (err) { showTossModal("ERROR", { error: err.message }); }
+    }
 
-        if (data.result && data.result.length > 0) {
-          const item = data.result[0];
-          alert(`[종목 정보]\n종목명: ${item.name}\n코드: ${item.symbol}\n시장: ${item.market}\n통화: ${item.currency}`);
-        } else {
-          alert(`[NOT FOUND] 해당 종목(${query})을 찾을 수 없습니다.`);
-        }
-      } catch (err) { alert(`종목 조회 실패: ${err.message}`); }
+    function publishPost() {
+      const cat = document.getElementById('post-category').value.trim() || 'QUANT';
+      const author = currentUser ? currentUser.name : 'GUEST';
+      const title = document.getElementById('post-title').value.trim();
+      const content = document.getElementById('post-content').value.trim();
+
+      if (!title || !content || !window.dbPush || !window.postRef) return;
+      const dateStr = new Date().toLocaleDateString();
+
+      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-content').value = '';
+      closePostModal();
+    }
+
+    function displayPostCard(cat, author, title, content, date) {
+      const grid = document.getElementById('post-grid');
+      const cardHtml = `
+        <article class="bb-box p-3 flex flex-col justify-between hover:border-bbAmber">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="bg-bbAmber/20 text-bbAmber text-[9px] px-1.5 py-0.5 font-mono border border-bbAmber/40">${cat}</span>
+              <span class="text-gray-600 text-[10px] font-mono">${date}</span>
+            </div>
+            <h3 class="text-sm font-bold text-white mb-2 leading-snug font-sans">${title}</h3>
+            <p class="text-gray-400 text-xs leading-relaxed column-content mb-3 font-sans">${content}</p>
+          </div>
+          <div class="pt-2 border-t border-bbBorder text-[10px] text-gray-500 flex justify-between font-mono">
+            <span>USER: <strong class="text-bbAmber">${author}</strong></span>
+          </div>
+        </article>
+      `;
+      grid.insertAdjacentHTML('afterbegin', cardHtml);
+    }
+
+    function updateMainOverviewBriefing(cat, author, title, content, date) {
+      const container = document.getElementById('latest-briefing-card');
+      container.innerHTML = `
+        <div class="flex items-center justify-between text-[10px] font-mono mb-1">
+          <span class="bg-bbAmber/20 text-bbAmber px-1.5 py-0.5 border border-bbAmber/40 font-bold">[${cat}]</span>
+          <span class="text-gray-500">${date}</span>
+        </div>
+        <h3 class="text-sm font-bold text-white font-sans">${title}</h3>
+        <p class="text-xs text-gray-400 line-clamp-2 font-sans leading-relaxed">${content}</p>
+        <div class="pt-2 flex justify-between items-center text-[10px] font-mono border-t border-bbBorder/50">
+          <span class="text-gray-400">AUTHOR: <strong class="text-bbAmber">${author}</strong></span>
+          <button onclick="switchTab('column')" class="text-bbAmber hover:underline font-bold">&gt; READ FULL COLUMN</button>
+        </div>
+      `;
+    }
+
+    function pushMessageToCloud() {
+      const txtIn = document.getElementById('chat-txt');
+      const nickname = currentUser ? currentUser.name : 'GUEST';
+      if (!txtIn.value.trim() || !window.dbPush) return;
+      window.dbPush(window.chatRef, { nickname: nickname, message: txtIn.value.trim(), timestamp: new Date().toLocaleTimeString() });
+      txtIn.value = '';
+    }
+
+    function displayMessageNode(name, text, time) {
+      const chatWin = document.getElementById('chat-messages');
+      chatWin.insertAdjacentHTML('beforeend', `<div><span class="text-gray-500">[${time}]</span> <span class="text-bbAmber font-bold">&lt;${name}&gt;</span> <span class="text-gray-200">${text}</span></div>`);
+      chatWin.scrollTop = chatWin.scrollHeight;
     }
   </script>
 </body>
