@@ -48,11 +48,14 @@
     .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
     .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
 
+    /* 모바일 스크롤 지원 탭 스타일 */
     .nav-btn {
       background-color: #121212;
       border: 1px solid #333333;
       color: #888888;
       transition: all 0.2s ease;
+      white-space: nowrap;
+      min-width: 80px;
     }
     .nav-btn:hover {
       border-color: #ff9900;
@@ -159,13 +162,13 @@
       <span><strong class="text-bbAmber">MSFT</strong> 448.90 <span class="text-bbGreen">+1.1%</span></span>
     </div>
 
-    <!-- 상단 탭 네비게이션 -->
-    <nav class="bg-black grid grid-cols-5 gap-1 text-center mt-1 font-mono text-xs px-1">
-      <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active py-2 rounded-t flex justify-center items-center gap-1.5"><span class="text-[10px] opacity-70">F1</span><span>[OVERVIEW]</span></button>
-      <button onclick="switchTab('market')" id="nav-market" class="nav-btn py-2 rounded-t flex justify-center items-center gap-1.5"><span class="text-[10px] opacity-70">F2</span><span>[MARKET]</span></button>
-      <button onclick="switchTab('team')" id="nav-team" class="nav-btn py-2 rounded-t flex justify-center items-center gap-1.5"><span class="text-[10px] opacity-70">F3</span><span>[TEAM]</span></button>
-      <button onclick="switchTab('column')" id="nav-column" class="nav-btn py-2 rounded-t flex justify-center items-center gap-1.5"><span class="text-[10px] opacity-70">F4</span><span>[COLUMN]</span></button>
-      <button onclick="switchTab('chat')" id="nav-chat" class="nav-btn py-2 rounded-t flex justify-center items-center gap-1.5"><span class="text-[10px] opacity-70">F5</span><span>[CHAT]</span></button>
+    <!-- 모바일 스크롤 완벽 대응 상단 탭 -->
+    <nav class="bg-black flex overflow-x-auto gap-1 text-center mt-1 font-mono text-xs px-1 no-scrollbar">
+      <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F1</span><span>[OVERVIEW]</span></button>
+      <button onclick="switchTab('market')" id="nav-market" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F2</span><span>[MARKET]</span></button>
+      <button onclick="switchTab('team')" id="nav-team" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F3</span><span>[TEAM]</span></button>
+      <button onclick="switchTab('column')" id="nav-column" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F4</span><span>[COLUMN]</span></button>
+      <button onclick="switchTab('chat')" id="nav-chat" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F5</span><span>[CHAT]</span></button>
     </nav>
   </header>
 
@@ -268,7 +271,8 @@
         <div class="bb-box h-[280px] lg:h-full flex flex-col">
           <div class="bb-box-header">
             <span id="chart-title">NASDAQ COMPOSITE 1D MONITOR</span>
-            <span class="text-bbAmber">TICK: 15m</span>
+            <!-- 전일 마감 종목 표기 레이블 강화 -->
+            <span class="text-bbAmber">PREV_CLOSE (CLOSED) // 15m TICK</span>
           </div>
           <div class="flex-1 p-2 relative">
             <canvas id="marketChart" class="w-full h-full"></canvas>
@@ -708,7 +712,6 @@
       `).join('');
     }
 
-    // 선택된 종목의 백엔드 차트 API(/api/stock-chart/{symbol})를 직접 호출하여 실제 주가 그래프 렌더링
     async function selectStock(symbol, name, price, changeStr, element) {
       document.querySelectorAll('.stock-item').forEach(el => el.classList.remove('active'));
       if(element) element.classList.add('active');
