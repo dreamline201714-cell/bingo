@@ -216,9 +216,9 @@
       </div>
     </section>
 
-    <!-- 2. MARKET TAB (고도화된 HTS 스타일 3x2 대시보드) -->
+    <!-- 2. MARKET TAB (HTS 스타일 시세 카드 3x2) -->
     <section id="tab-market" class="tab-content h-full flex-col gap-2">
-      <!-- 토스증권 API 단축 컨트롤 바 -->
+      <!-- 검색바 & 기능 버튼 -->
       <div class="bb-box p-2 flex flex-wrap items-center justify-between gap-2 font-mono">
         <div class="flex items-center gap-2 flex-1 min-w-[280px]">
           <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
@@ -238,7 +238,7 @@
         </div>
       </div>
 
-      <!-- 3x2 고급 증권 차트 그리드 -->
+      <!-- 3x2 차트 카드 그리드 -->
       <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto">
         
         <!-- CARD 1: 삼성전자 -->
@@ -458,7 +458,6 @@
       }, 3000);
     });
 
-    /* 이중 차트(가격 라인 + 거래량 막대) 초기화 */
     function initMultiCharts() {
       INITIAL_SYMBOLS.forEach(symbol => {
         const canvas = document.getElementById(`chart-${symbol}`);
@@ -523,7 +522,6 @@
       });
     }
 
-    /* 실시간 가격 및 색상(빨강/파랑) 동적 업데이트 */
     function updateRealtimeChart(symbol, newPrice, newVolume = 300) {
       const chart = multiCharts[symbol];
       if (!chart) return;
@@ -551,7 +549,6 @@
       chart.update('none');
     }
 
-    /* 토스증권 API 수신 및 디스플레이 바인딩 */
     async function fetchStockPrice(symbol) {
       try {
         const res = await fetch(`${BACKEND_URL}/api/toss/prices/${symbol}`);
