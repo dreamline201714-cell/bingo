@@ -4,24 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>철마스트리트 (CHEOLMA STREET)</title>
-  
-  <!-- CSS 스타일 강제 적용 (배경색, 텍스트 기본값, 칼럼 줄바꿈 처리) -->
+
   <style>
+    /* 남색(Deep Navy) 베이스 배경 */
     body {
-      background-color: #090d16 !important;
+      background-color: #0a0f1d !important;
       color: #f3f4f6 !important;
-      font-family: 'Pretendard', sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     }
     html { scroll-behavior: smooth; }
+    
+    /* 녹색(Forest Green) 체크 패턴 감성의 유리 질감 카드 */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .glass-card:hover {
+      border-color: rgba(16, 185, 129, 0.5);
+      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
+    }
+    
     .fade-in-section {
       opacity: 0; transform: translateY(30px);
       transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
-    .chat-scroll::-webkit-scrollbar { width: 6px; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    .chat-scroll::-webkit-scrollbar { width: 4px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
     
-    /* 긴 칼럼 본문의 줄바꿈/띄어쓰기 보존 설정 */
     .column-content {
       white-space: pre-line;
       word-break: break-word;
@@ -35,12 +46,13 @@
       theme: {
         extend: {
           colors: {
-            brandBlue: '#2563eb',
-            brandCyan: '#06b6d4',
-            darkBg: '#090d16',
+            brandNavy: '#0a0f1d',
+            brandGreen: '#10b981',
+            brandWine: '#881337',
+            brandWineHover: '#9f1239',
             cardBg: '#111827',
             kakaoYellow: '#FEE500',
-            kakaoChatBg: '#BACEE0'
+            kakaoChatBg: '#A9BDCE'
           }
         }
       }
@@ -72,207 +84,190 @@
     window.onChildAdded = onChildAdded;
   </script>
 </head>
-<body class="bg-darkBg text-gray-100 font-sans antialiased overflow-x-hidden">
+<body class="bg-brandNavy text-gray-100 font-sans antialiased overflow-x-hidden">
 
-  <!-- 1. NAVIGATION BAR (모바일 반응형 햄버거 메뉴 포함) -->
-  <nav class="fixed top-0 left-0 w-full z-50 bg-darkBg/90 backdrop-blur-md border-b border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-2 sm:space-x-3">
-        <span class="text-lg sm:text-xl font-black text-white tracking-wider">철마스트리트</span>
-        <span class="text-[10px] sm:text-xs font-mono text-brandCyan bg-brandCyan/10 px-2 py-0.5 rounded border border-brandCyan/20">CHEOLMA STREET</span>
+  <!-- NAVIGATION BAR (남색 배경 + 와인색/녹색 포인트) -->
+  <nav class="fixed top-0 left-0 w-full z-50 bg-[#0a0f1d]/90 backdrop-blur-xl border-b border-emerald-500/10">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-xl font-black tracking-tight text-white">철마스트리트</span>
+        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 tracking-wider">CHEOLMA STREET</span>
       </div>
 
-      <!-- 데스크톱 메뉴 -->
-      <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-400">
-        <a href="#about" class="hover:text-brandCyan transition-colors">운영진 프로필</a>
-        <a href="#market" class="hover:text-brandCyan transition-colors">실시간 주가</a>
-        <a href="#column" class="hover:text-brandCyan transition-colors">투자 칼럼</a>
-        <a href="#chat" class="hover:text-brandCyan transition-colors">토론방</a>
+      <div class="hidden md:flex items-center space-x-10 text-xs font-semibold text-gray-300 uppercase tracking-widest">
+        <a href="#about" class="hover:text-emerald-400 transition-colors">운영진</a>
+        <a href="#market" class="hover:text-emerald-400 transition-colors">실시간 주가</a>
+        <a href="#column" class="hover:text-emerald-400 transition-colors">칼럼</a>
+        <a href="#chat" class="hover:text-emerald-400 transition-colors">토론방</a>
       </div>
 
-      <!-- 모바일 햄버거 버튼 -->
-      <button onclick="toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white p-2">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
+      <button onclick="toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
       </button>
     </div>
 
-    <!-- 모바일 메뉴 드롭다운 -->
-    <div id="mobile-menu" class="hidden md:hidden bg-cardBg border-b border-gray-800 px-6 py-4 space-y-3 text-sm font-medium text-gray-300">
-      <a href="#about" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">운영진 프로필</a>
-      <a href="#market" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">실시간 주가</a>
-      <a href="#column" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">투자 칼럼</a>
-      <a href="#chat" onclick="toggleMobileMenu()" class="block hover:text-brandCyan">토론방</a>
+    <div id="mobile-menu" class="hidden md:hidden bg-[#0f172a] border-b border-emerald-500/10 px-6 py-4 space-y-3 text-xs font-semibold text-gray-300 uppercase tracking-widest">
+      <a href="#about" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">운영진</a>
+      <a href="#market" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">실시간 주가</a>
+      <a href="#column" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">칼럼</a>
+      <a href="#chat" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">토론방</a>
     </div>
   </nav>
 
-  <!-- HERO SECTION -->
-  <section class="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center pt-24 px-4 sm:px-6 overflow-hidden">
-    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-brandBlue/10 rounded-full blur-[100px] -z-10"></div>
+  <!-- HERO SECTION (녹색 체크 라이닝 + 와인색 타이틀 강조) -->
+  <section class="relative min-h-[60vh] flex items-center justify-center pt-32 px-6 overflow-hidden">
+    <!-- 녹색 및 와인색 은은한 라이트 그래디언트 -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-[140px] -z-10"></div>
+    <div class="absolute top-1/3 left-1/3 w-[300px] h-[200px] bg-rose-900/20 rounded-full blur-[120px] -z-10"></div>
+    
     <div class="max-w-4xl mx-auto text-center">
-      <span class="inline-block text-[10px] sm:text-xs font-bold tracking-widest text-brandCyan bg-brandCyan/10 px-3 py-1.5 rounded-full mb-4 border border-brandCyan/20">
-        CHEOLMA STREET FINANCIAL NETWORK
-      </span>
-      <h1 class="text-3xl sm:text-6xl font-extrabold text-white mb-4 leading-tight">
-        철마스트리트 트레이딩룸
+      <div class="inline-flex items-center space-x-2 text-[11px] font-mono tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-1.5 rounded-full mb-8 border border-emerald-500/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>INTELLIGENT TRADING HUB</span>
+      </div>
+      <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tight leading-[1.1]">
+        미래를 리밸런싱하는<br>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-gray-200 to-rose-400">철마스트리트</span>
       </h1>
+      <p class="text-gray-400 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
+        남색과 녹색, 와인색의 조화처럼 정갈하고 안정적인 금융 인사이트를 공유합니다.
+      </p>
     </div>
   </section>
 
-  <!-- 3. 운영진 프로필 (복어왕, 아쿠마, 터틀맨) -->
-  <section id="about" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
-    <div class="text-center mb-12 sm:mb-16">
-      <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">TEAM MEMBERS</h2>
-      <p class="text-2xl sm:text-3xl font-bold text-white">운영진 프로필</p>
+  <!-- 3. TEAM MEMBERS (운영진 프로필) -->
+  <section id="about" class="py-24 px-6 max-w-7xl mx-auto fade-in-section">
+    <div class="mb-16">
+      <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">01 // LEADERSHIP</span>
+      <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">운영진 프로필</h2>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
-        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
-          <span class="text-gray-500 text-xs">사진 영역</span>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
+        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
+          <span class="text-emerald-400 text-xs font-mono">IMG_01</span>
         </div>
-        <h3 class="text-lg font-bold text-white mb-1">복어왕</h3>
-        <p class="text-gray-400 text-sm leading-relaxed">위대한 복츠비</p>
+        <h3 class="text-xl font-bold text-white mb-1">복어왕</h3>
+        <p class="text-xs font-mono text-emerald-400 mb-4">위대한 복츠비</p>
+        <p class="text-gray-400 text-xs leading-relaxed">철마스트리트의 총괄 리더십을 담당하며 시장 인사이트를 제시합니다.</p>
       </div>
-      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
-        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
-          <span class="text-gray-500 text-xs">사진 영역</span>
+
+      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
+        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
+          <span class="text-emerald-400 text-xs font-mono">IMG_02</span>
         </div>
-        <h3 class="text-lg font-bold text-white mb-1">아쿠마</h3>
-        <p class="text-gray-400 text-sm leading-relaxed">운영진 2 소개 레이아웃 스페이스입니다.</p>
+        <h3 class="text-xl font-bold text-white mb-1">아쿠마</h3>
+        <p class="text-xs font-mono text-emerald-400 mb-4">MEMBER PROFILE</p>
+        <p class="text-gray-400 text-xs leading-relaxed">퀀트 분석 및 매크로 트레이딩 알고리즘 구조 연구를 담당합니다.</p>
       </div>
-      <div class="bg-cardBg border border-gray-800 rounded-2xl p-6 text-center hover:border-brandCyan/50 transition-all">
-        <div class="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 rounded-full bg-gray-800 border-2 border-gray-700 flex items-center justify-center overflow-hidden">
-          <span class="text-gray-500 text-xs">사진 영역</span>
+
+      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
+        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
+          <span class="text-emerald-400 text-xs font-mono">IMG_03</span>
         </div>
-        <h3 class="text-lg font-bold text-white mb-1">터틀맨</h3>
-        <p class="text-gray-400 text-sm leading-relaxed">운영진 3 소개 레이아웃 스페이스입니다.</p>
+        <h3 class="text-xl font-bold text-white mb-1">터틀맨</h3>
+        <p class="text-xs font-mono text-emerald-400 mb-4">MEMBER PROFILE</p>
+        <p class="text-gray-400 text-xs leading-relaxed">커뮤니티 운용 및 리서치 자료 수집 파이프라인 관리를 담당합니다.</p>
       </div>
     </div>
   </section>
 
-  <!-- 4. 실시간 주가 확인 -->
-  <section id="market" class="py-16 sm:py-24 bg-gray-950 border-y border-gray-800/80 px-4 sm:px-6 fade-in-section">
+  <!-- 4. 실시간 주가 차트 (와인색 탭 활성화 & 녹색 그래프) -->
+  <section id="market" class="py-24 px-6 border-y border-emerald-500/10 bg-emerald-950/[0.05] fade-in-section">
     <div class="max-w-7xl mx-auto">
-      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-10">
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
         <div>
-          <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">MARKET WATCH</h2>
-          <p class="text-2xl sm:text-3xl font-bold text-white">실시간 증시 데이터</p>
+          <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">02 // REAL-TIME MARKET</span>
+          <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">증시 파이프라인</h2>
         </div>
-        <div class="flex bg-gray-900 p-1 rounded-xl border border-gray-800 mt-4 md:mt-0 w-full sm:w-auto">
-          <button id="btn-kr" onclick="switchMarket('KR')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-brandBlue text-white transition-all">국내 증시</button>
-          <button id="btn-us" onclick="switchMarket('US')" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-gray-400 hover:text-white transition-all">미국 증시</button>
+        <div class="flex bg-slate-900/80 p-1 rounded-xl border border-emerald-500/20 mt-6 md:mt-0 w-full sm:w-auto">
+          <button id="btn-kr" onclick="switchMarket('KR')" class="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold bg-brandWine hover:bg-brandWineHover text-white transition-all">국내 증시</button>
+          <button id="btn-us" onclick="switchMarket('US')" class="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all">미국 증시</button>
         </div>
       </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-center">
-        <div id="stock-list" class="space-y-3 sm:space-y-4"></div>
-        <div class="lg:col-span-2 bg-cardBg border border-gray-800 p-4 sm:p-6 rounded-2xl">
-          <div class="h-56 sm:h-64 w-full"><canvas id="marketChart"></canvas></div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div id="stock-list" class="space-y-3"></div>
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl">
+          <div class="h-64 w-full"><canvas id="marketChart"></canvas></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 5. 투자 칼럼 & 게시판 -->
-  <section id="column" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-12">
+  <!-- 5. 투자 칼럼 & 게시판 (와인색 포인트 버튼) -->
+  <section id="column" class="py-24 px-6 max-w-7xl mx-auto fade-in-section">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12">
       <div>
-        <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">INSIGHTS</h2>
-        <p class="text-2xl sm:text-3xl font-bold text-white">투자 칼럼 & 오피니언</p>
+        <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">03 // INSIGHTS</span>
+        <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">투자 칼럼</h2>
       </div>
-      <button onclick="openPostModal()" class="mt-4 sm:mt-0 bg-brandBlue hover:bg-blue-600 text-white font-bold px-5 py-2.5 rounded-lg text-xs sm:text-sm transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-500/10">
+      <button onclick="openPostModal()" class="mt-6 sm:mt-0 bg-brandWine hover:bg-brandWineHover text-white font-bold px-5 py-3 rounded-xl text-xs transition-colors flex items-center gap-2 shadow-lg shadow-rose-950/40">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        칼럼 작성하기
+        <span>칼럼 작성</span>
       </button>
     </div>
 
-    <!-- 실시간 칼럼 그리드 -->
-    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Firebase 데이터가 여기에 동적으로 들어옵니다 -->
-    </div>
+    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
   </section>
 
-  <!-- 확장형 대형 칼럼 작성 모달 창 -->
-  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-    <div class="bg-cardBg border border-gray-700 w-full max-w-3xl rounded-2xl p-5 sm:p-8 relative my-auto shadow-2xl">
-      <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-        <div>
-          <h3 class="text-xl font-bold text-white">새 칼럼 / 오피니언 작성</h3>
-          <p class="text-xs text-gray-400 mt-1">깊이 있는 시황 분석 및 인사이트 글을 작성해 주세요.</p>
-        </div>
-        <button onclick="closePostModal()" class="text-gray-400 hover:text-white p-1">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+  <!-- 대형 작성 모달 -->
+  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-[#0f172a] border border-emerald-500/20 w-full max-w-2xl rounded-2xl p-6 sm:p-8 relative shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-emerald-500/10 pb-4">
+        <h3 class="text-lg font-bold text-white">칼럼 작성</h3>
+        <button onclick="closePostModal()" class="text-gray-400 hover:text-white">✕</button>
       </div>
 
       <div class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">카테고리</label>
-            <input type="text" id="post-category" placeholder="예: 시황 분석, 퀀트 연구, 미국 증시" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-brandCyan">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-400 mb-1">작성자</label>
-            <input type="text" id="post-author" placeholder="작성자 이름" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-brandCyan">
-          </div>
+          <input type="text" id="post-category" placeholder="카테고리 (예: 매크로, 퀀트)" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-400">
+          <input type="text" id="post-author" placeholder="작성자 닉네임" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-400">
         </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 mb-1">칼럼 제목</label>
-          <input type="text" id="post-title" placeholder="제목을 입력해 주세요" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-white outline-none focus:border-brandCyan">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-gray-400 mb-1">본문 내용 (엔터 줄바꿈 보존)</label>
-          <textarea id="post-content" rows="11" placeholder="자유롭게 본문을 작성하세요. 줄바꿈과 문단이 그대로 반영됩니다." class="w-full bg-gray-900 border border-gray-800 rounded-lg p-3.5 text-xs text-white outline-none focus:border-brandCyan resize-y leading-relaxed"></textarea>
-        </div>
+        <input type="text" id="post-title" placeholder="칼럼 제목" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-sm font-semibold text-white outline-none focus:border-emerald-400">
+        <textarea id="post-content" rows="10" placeholder="자유롭게 칼럼 본문을 작성해 주세요..." class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl p-4 text-xs text-white outline-none focus:border-emerald-400 leading-relaxed resize-y"></textarea>
       </div>
 
-      <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-800">
-        <button onclick="closePostModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold px-5 py-2.5 rounded-lg text-xs transition-colors">취소</button>
-        <button onclick="publishPost()" class="bg-brandCyan hover:bg-cyan-500 text-darkBg font-bold px-6 py-2.5 rounded-lg text-xs transition-colors shadow-lg shadow-cyan-500/20">
-          게시하기
-        </button>
+      <div class="flex justify-end space-x-3 mt-6">
+        <button onclick="closePostModal()" class="bg-slate-800 text-gray-400 px-5 py-2.5 rounded-xl text-xs">취소</button>
+        <button onclick="publishPost()" class="bg-brandWine hover:bg-brandWineHover text-white font-bold px-6 py-2.5 rounded-xl text-xs transition-colors">게시</button>
       </div>
     </div>
   </div>
 
   <!-- 6. 카카오톡 실시간 토론방 -->
-  <section id="chat" class="py-16 sm:py-24 bg-gray-950 border-t border-gray-800 px-4 sm:px-6 fade-in-section">
+  <section id="chat" class="py-24 px-6 border-t border-emerald-500/10 bg-emerald-950/[0.05] fade-in-section">
     <div class="max-w-2xl mx-auto">
-      <div class="bg-kakaoChatBg rounded-2xl overflow-hidden shadow-2xl border border-gray-700 flex flex-col h-[480px] sm:h-[500px]">
-        
-        <div class="bg-[#A9BDCE] px-4 sm:px-5 py-3 border-b border-black/10 flex items-center justify-between text-gray-900">
-          <div>
-            <h4 class="font-bold text-xs sm:text-sm">철마스트리트 실시간 토론방</h4>
-            <span class="text-[10px] text-gray-600">구글 클라우드 동기화 됨</span>
-          </div>
-          <span class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+      <div class="mb-8 text-center">
+        <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">04 // COMMUNITY</span>
+        <h2 class="text-3xl font-black text-white tracking-tight">오픈 토론방</h2>
+      </div>
+
+      <div class="bg-[#A9BDCE] rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px]">
+        <div class="bg-[#9bb0c1] px-5 py-3 border-b border-black/10 flex items-center justify-between text-gray-900">
+          <span class="font-bold text-xs">철마스트리트 라이브 토론</span>
+          <span class="text-[10px] bg-brandWine text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
         </div>
 
-        <div id="chat-messages" class="flex-1 p-3 sm:p-4 overflow-y-auto chat-scroll space-y-4 text-xs text-gray-900">
-          <div class="text-center my-1">
-            <span class="bg-black/10 text-gray-700 text-[10px] px-3 py-1 rounded-full">구글 클라우드 DB와 연동되어 대화가 보존됩니다.</span>
-          </div>
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto chat-scroll space-y-4 text-xs text-gray-900">
+          <div class="text-center my-1"><span class="bg-black/10 text-gray-700 text-[10px] px-3 py-1 rounded-full">실시간 클라우드 보존 구역입니다.</span></div>
         </div>
 
-        <div class="bg-white p-2.5 sm:p-3 border-t border-gray-200 flex items-center space-x-2">
-          <input type="text" id="chat-id" placeholder="ID" class="w-16 sm:w-20 bg-gray-100 border border-gray-300 rounded-lg px-2 py-2 text-xs text-gray-800 outline-none focus:border-brandBlue">
-          <input type="text" id="chat-txt" placeholder="메시지 입력..." class="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-xs text-gray-800 outline-none focus:border-brandBlue" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
-          <button onclick="pushMessageToCloud()" class="bg-kakaoYellow hover:bg-yellow-400 text-gray-900 font-bold px-3 sm:px-4 py-2 rounded-lg text-xs transition-colors">전송</button>
+        <div class="bg-white p-3 border-t border-gray-200 flex items-center space-x-2">
+          <input type="text" id="chat-id" placeholder="ID" class="w-20 bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 outline-none">
+          <input type="text" id="chat-txt" placeholder="메시지 입력..." class="flex-1 bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
+          <button onclick="pushMessageToCloud()" class="bg-kakaoYellow text-gray-900 font-bold px-4 py-2 rounded-xl text-xs">전송</button>
         </div>
       </div>
     </div>
   </section>
 
-  <footer class="py-8 text-center text-xs text-gray-600">&copy; 2026 CHEOLMA STREET.</footer>
+  <footer class="py-12 border-t border-emerald-500/10 text-center text-xs font-mono text-gray-600">&copy; 2026 CHEOLMA STREET.</footer>
 
   <script>
     function toggleMobileMenu() {
-      const menu = document.getElementById('mobile-menu');
-      menu.classList.toggle('hidden');
+      document.getElementById('mobile-menu').classList.toggle('hidden');
     }
-
     function openPostModal() { document.getElementById('post-modal').classList.remove('hidden'); }
     function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
 
@@ -302,22 +297,14 @@
 
     function publishPost() {
       const cat = document.getElementById('post-category').value.trim() || '시황 오피니언';
-      const author = document.getElementById('post-author').value.trim() || '익명 칼럼니스트';
+      const author = document.getElementById('post-author').value.trim() || '익명';
       const title = document.getElementById('post-title').value.trim();
       const content = document.getElementById('post-content').value.trim();
 
       if (!title || !content || !window.dbPush || !window.postRef) return;
-
       const dateStr = new Date().toLocaleDateString();
 
-      window.dbPush(window.postRef, {
-        category: cat,
-        author: author,
-        title: title,
-        content: content,
-        date: dateStr
-      });
-
+      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
       document.getElementById('post-title').value = '';
       document.getElementById('post-content').value = '';
       closePostModal();
@@ -326,17 +313,17 @@
     function displayPostCard(cat, author, title, content, date) {
       const grid = document.getElementById('post-grid');
       const cardHtml = `
-        <article class="bg-cardBg border border-gray-800 rounded-2xl p-6 flex flex-col justify-between hover:border-gray-700 transition-all shadow-lg">
+        <article class="glass-card rounded-2xl p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-all">
           <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="bg-brandCyan/10 text-brandCyan text-xs font-semibold px-2.5 py-1 rounded-full border border-brandCyan/20">${cat}</span>
-              <span class="text-gray-500 text-xs">${date}</span>
+            <div class="flex items-center justify-between mb-4">
+              <span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20">${cat}</span>
+              <span class="text-gray-500 text-xs font-mono">${date}</span>
             </div>
             <h3 class="text-lg font-bold text-white mb-3 leading-snug">${title}</h3>
             <p class="text-gray-300 text-xs leading-relaxed column-content mb-4">${content}</p>
           </div>
-          <div class="mt-4 pt-4 border-t border-gray-800/80 text-xs text-gray-500 flex justify-between items-center">
-            <span>작성자: <strong class="text-gray-400">${author}</strong></span>
+          <div class="mt-4 pt-4 border-t border-emerald-500/10 text-xs text-gray-500 flex justify-between items-center">
+            <span>작성자: <strong class="text-gray-300">${author}</strong></span>
           </div>
         </article>
       `;
@@ -352,11 +339,7 @@
       if (!message || !window.dbPush || !window.chatRef) return;
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      window.dbPush(window.chatRef, {
-        nickname: nickname,
-        message: message,
-        timestamp: timeStr
-      });
+      window.dbPush(window.chatRef, { nickname: nickname, message: message, timestamp: timeStr });
       txtIn.value = '';
     }
 
@@ -368,7 +351,7 @@
           <div>
             <span class="text-[11px] text-gray-600 block mb-0.5">${name}</span>
             <div class="flex items-end space-x-1">
-              <div class="bg-white p-2 rounded-r-xl rounded-bl-xl shadow-sm max-w-xs leading-normal text-gray-950">${text}</div>
+              <div class="bg-white p-2.5 rounded-r-xl rounded-bl-xl shadow-sm max-w-xs leading-normal text-gray-950">${text}</div>
               <span class="text-[9px] text-gray-500">${time}</span>
             </div>
           </div>
@@ -380,13 +363,23 @@
 
     let currentChart = null;
     function switchMarket(t) {
+      const btnKr = document.getElementById('btn-kr');
+      const btnUs = document.getElementById('btn-us');
       const kr = [{name:"삼성전자", price:"78,500 KRW"}, {name:"SK하이닉스", price:"182,400 KRW"}];
       const us = [{name:"NVIDIA (NVDA)", price:"128.50 USD"}, {name:"Apple (AAPL)", price:"224.30 USD"}];
       const list = document.getElementById('stock-list');
       const targetData = t === 'KR' ? kr : us;
 
+      if(t === 'KR') {
+        btnKr.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold bg-brandWine hover:bg-brandWineHover text-white transition-all";
+        btnUs.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all";
+      } else {
+        btnUs.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold bg-brandWine hover:bg-brandWineHover text-white transition-all";
+        btnKr.className = "flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all";
+      }
+
       list.innerHTML = targetData.map(i => `
-        <div class="bg-cardBg border border-gray-800 p-4 rounded-xl flex justify-between items-center">
+        <div class="glass-card p-4 rounded-xl flex justify-between items-center">
           <div><h4 class="font-bold text-white text-sm">${i.name}</h4></div>
           <div class="text-right"><div class="font-bold text-sm text-gray-200">${i.price}</div></div>
         </div>
@@ -396,7 +389,7 @@
       if (currentChart) currentChart.destroy();
       currentChart = new Chart(ctx, {
         type: 'line',
-        data: { labels: ['09:00', '11:00', '13:00', '15:00'], datasets: [{ data: t==='KR'?[2620, 2630, 2650, 2684]:[17400, 17500, 17680, 17825], borderColor: '#06b6d4', borderWidth: 2, fill: false }] },
+        data: { labels: ['09:00', '11:00', '13:00', '15:00'], datasets: [{ data: t==='KR'?[2620, 2630, 2650, 2684]:[17400, 17500, 17680, 17825], borderColor: '#10b981', borderWidth: 2, fill: false }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
     }
