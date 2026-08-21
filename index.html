@@ -4,10 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>철마스트리트 (CHEOLMA STREET)</title>
+  
+  <!-- CSS 스타일 강제 적용 (배경색 및 텍스트 기본값) -->
+  <style>
+    body {
+      background-color: #090d16 !important;
+      color: #f3f4f6 !important;
+      font-family: 'Pretendard', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    .fade-in-section {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
+    .chat-scroll::-webkit-scrollbar { width: 6px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+  </style>
+
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandBlue: '#2563eb',
+            brandCyan: '#06b6d4',
+            darkBg: '#090d16',
+            cardBg: '#111827',
+            kakaoYellow: '#FEE500',
+            kakaoChatBg: '#BACEE0'
+          }
+        }
+      }
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase SDK (칼럼 및 대화 저장용) -->
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -25,40 +60,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     
-    // DB 노드 분리 (채팅 / 게시판)
     window.chatRef = ref(db, "chats");
     window.postRef = ref(db, "posts");
     window.dbPush = push;
     window.onChildAdded = onChildAdded;
   </script>
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brandBlue: '#2563eb',
-            brandCyan: '#06b6d4',
-            darkBg: '#090d16',
-            cardBg: '#111827',
-            kakaoYellow: '#FEE500',
-            kakaoChatBg: '#BACEE0'
-          },
-          fontFamily: { sans: ['Pretendard', sans-serif] }
-        }
-      }
-    }
-  </script>
-  <style>
-    html { scroll-behavior: smooth; }
-    .fade-in-section {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
-    .chat-scroll::-webkit-scrollbar { width: 6px; }
-    .chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
-  </style>
 </head>
 <body class="bg-darkBg text-gray-100 font-sans antialiased overflow-x-hidden">
 
