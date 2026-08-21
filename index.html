@@ -100,7 +100,7 @@
 
       <!-- Auth Form Box -->
       <div class="bg-bbPanel border border-bbBorder p-4 rounded max-w-md mx-auto space-y-3">
-        <input type="password" id="auth-code-input" placeholder="ACCESS CODE (e.g. BOGEO-9912)" 
+        <input type="password" id="auth-code-input" placeholder="ACCESS CODE" 
                class="w-full bg-black border border-bbBorder px-3 py-2 text-center text-xs text-bbAmber outline-none focus:border-bbAmber font-mono"
                onkeypress="if(event.key==='Enter') authenticateUser()">
         <button onclick="authenticateUser()" class="w-full bg-bbAmber text-black font-extrabold py-2 text-xs hover:bg-yellow-400">
@@ -313,9 +313,9 @@
   <!-- SCRIPT CONTROLLER -->
   <script>
     const AUTH_CODES = {
-      "BOGEO-9912": { name: "복어왕", role: "ADMIN", level: "L5" },
-      "AKUMA-7741": { name: "아쿠마", role: "OPERATOR", level: "L4" },
-      "TURTLE-3301": { name: "터틀맨", role: "OPERATOR", level: "L4" }
+      "BOGEO-0624": { name: "복어왕", role: "ADMIN", level: "L5" },
+      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR", level: "L4" },
+      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR", level: "L4" }
     };
 
     let currentUser = null;
