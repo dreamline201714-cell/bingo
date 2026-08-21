@@ -3,55 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>철마스트리트 (CHEOLMA STREET)</title>
+  <title>CHEOLMA TERMINAL v4.0.2</title>
 
-  <style>
-    body {
-      background-color: #0a0f1d !important;
-      color: #f3f4f6 !important;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    }
-    html { scroll-behavior: smooth; }
-    
-    .glass-card {
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-    }
-    .glass-card:hover {
-      border-color: rgba(16, 185, 129, 0.5);
-      box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
-    }
-    
-    .fade-in-section {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
-    
-    .custom-scroll::-webkit-scrollbar { width: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 2px; }
-    
-    .column-content {
-      white-space: pre-line;
-      word-break: break-word;
-    }
-  </style>
-
-  <!-- Tailwind CSS CDN -->
+  <!-- Google Fonts & Tailwind CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,700;1,400&family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brandNavy: '#0a0f1d',
-            brandGreen: '#10b981',
-            brandWine: '#881337',
-            brandWineHover: '#9f1239',
-            cardBg: '#111827',
-            kakaoYellow: '#FEE500',
-            kakaoChatBg: '#A9BDCE'
+            bbBlack: '#0a0a0a',
+            bbDark: '#121212',
+            bbPanel: '#1a1a1a',
+            bbAmber: '#ff9900',
+            bbGreen: '#00ff66',
+            bbRed: '#ff3333',
+            bbBlue: '#00bcff',
+            bbBorder: '#333333'
+          },
+          fontFamily: {
+            mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
+            sans: ['"Noto Sans KR"', 'sans-serif']
           }
         }
       }
@@ -59,10 +34,25 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <style>
+    body { background-color: #0a0a0a; color: #cccccc; font-family: 'JetBrains Mono', monospace; overflow: hidden; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb { background: #ff9900; }
+    .bb-box { border: 1px solid #333333; background-color: #121212; }
+    .bb-box-header { background-color: #1a1a1a; border-bottom: 1px solid #333333; padding: 4px 8px; font-size: 11px; font-weight: bold; color: #ff9900; display: flex; justify-content: space-between; align-items: center; }
+    .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.4; }
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; }
+    .stock-item { cursor: pointer; transition: all 0.15s ease; }
+    .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
+    .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
+  </style>
+
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA3YXZ_53BQ8UmKXa397XGOWO0v1DfnR8U",
@@ -79,364 +69,398 @@
     
     window.chatRef = ref(db, "chats");
     window.postRef = ref(db, "posts");
+    window.fundRef = ref(db, "fund_portfolio");
     window.dbPush = push;
+    window.dbSet = set;
     window.onChildAdded = onChildAdded;
+    window.onValue = onValue;
   </script>
 </head>
-<body class="bg-brandNavy text-gray-100 font-sans antialiased overflow-x-hidden">
+<body class="h-screen w-screen flex flex-col justify-between select-none relative">
 
-  <!-- NAVIGATION BAR -->
-  <nav class="fixed top-0 left-0 w-full z-50 bg-[#0a0f1d]/90 backdrop-blur-xl border-b border-emerald-500/10">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="text-xl font-black tracking-tight text-white">철마스트리트</span>
-        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 tracking-wider">CHEOLMA STREET</span>
-      </div>
+  <div class="scanline"></div>
 
-      <div class="hidden md:flex items-center space-x-10 text-xs font-semibold text-gray-300 uppercase tracking-widest">
-        <a href="#about" class="hover:text-emerald-400 transition-colors">운영진</a>
-        <a href="#market" class="hover:text-emerald-400 transition-colors">US 증시 터미널</a>
-        <a href="#column" class="hover:text-emerald-400 transition-colors">칼럼</a>
-        <a href="#chat" class="hover:text-emerald-400 transition-colors">토론방</a>
-      </div>
-
-      <button onclick="toggleMobileMenu()" class="md:hidden text-gray-300 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
-    </div>
-
-    <div id="mobile-menu" class="hidden md:hidden bg-[#0f172a] border-b border-emerald-500/10 px-6 py-4 space-y-3 text-xs font-semibold text-gray-300 uppercase tracking-widest">
-      <a href="#about" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">운영진</a>
-      <a href="#market" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">US 증시 터미널</a>
-      <a href="#column" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">칼럼</a>
-      <a href="#chat" onclick="toggleMobileMenu()" class="block hover:text-emerald-400">토론방</a>
-    </div>
-  </nav>
-
-  <!-- HERO SECTION -->
-  <section class="relative min-h-[60vh] flex items-center justify-center pt-32 px-6 overflow-hidden">
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-[140px] -z-10"></div>
-    <div class="absolute top-1/3 left-1/3 w-[300px] h-[200px] bg-rose-900/20 rounded-full blur-[120px] -z-10"></div>
+  <!-- INTRO LANDING & AUTH SCREEN -->
+  <div id="intro-screen" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 select-none">
+    <canvas id="intro-canvas" class="absolute inset-0 z-0"></canvas>
     
-    <div class="max-w-4xl mx-auto text-center">
-      <div class="inline-flex items-center space-x-2 text-[11px] font-mono tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-1.5 rounded-full mb-8 border border-emerald-500/20">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>US MARKET REAL-TIME PIPELINE</span>
-      </div>
-      <h1 class="text-4xl sm:text-7xl font-black text-white mb-6 tracking-tight leading-[1.1]">
-        미래를 리밸런싱하는<br>
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-gray-200 to-rose-400">철마스트리트</span>
-      </h1>
-      <p class="text-gray-400 text-sm sm:text-base max-w-xl mx-auto leading-relaxed font-normal">
-        미국 M7 및 주요 개별주 데이터를 바탕으로 정갈하고 안정적인 금융 인사이트를 제공합니다.
-      </p>
-    </div>
-  </section>
+    <div class="z-10 text-center max-w-3xl space-y-6">
+      <pre class="text-bbAmber font-mono text-[9px] sm:text-[12px] md:text-[14px] leading-tight font-bold whitespace-pre overflow-x-auto">
+  ██████╗██╗  ██╗███████╗██████╗ ██╗     ███╗   ███╗███╗   ██╗███████╗████████╗
+ ██╔════╝██║  ██║██╔════╝██╔══██╗██║     ████╗ ████║████╗  ██║██╔════╝╚══██╔══╝
+ ██║     ███████║█████╗  ██║  ██║██║     ██╔████╔██║██╔██╗ ██║█████╗     ██║   
+ ██║     ██╔══██║██╔══╝  ██║  ██║██║     ██║╚██╔╝██║██║╚██╗██║██╔══╝     ██║   
+ ╚██████╗██║  ██║███████╗██████╔╝███████╗██║ ╚═╝ ██║██║ ╚████║███████╗   ██║   
+  ╚═════╝╚═╝  ╚═╝╚══════╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝   
+      </pre>
 
-  <!-- 3. TEAM MEMBERS -->
-  <section id="about" class="py-24 px-6 max-w-7xl mx-auto fade-in-section">
-    <div class="mb-16">
-      <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">01 // LEADERSHIP</span>
-      <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">운영진 프로필</h2>
-    </div>
-    
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
-        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
-          <span class="text-emerald-400 text-xs font-mono">IMG_01</span>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-1">복어왕</h3>
-        <p class="text-xs font-mono text-emerald-400 mb-4">위대한 복츠비</p>
-        <p class="text-gray-400 text-xs leading-relaxed">철마스트리트의 총괄 리더십을 담당하며 시장 인사이트를 제시합니다.</p>
+      <div class="text-bbGreen font-mono text-xs tracking-widest uppercase">
+        &gt; RESTRICTED OPERATOR ACCESS // ENTER AUTHORIZATION CODE
       </div>
 
-      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
-        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
-          <span class="text-emerald-400 text-xs font-mono">IMG_02</span>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-1">아쿠마</h3>
-        <p class="text-xs font-mono text-emerald-400 mb-4">MEMBER PROFILE</p>
-        <p class="text-gray-400 text-xs leading-relaxed">퀀트 분석 및 매크로 트레이딩 알고리즘 구조 연구를 담당합니다.</p>
-      </div>
-
-      <div class="glass-card rounded-2xl p-8 hover:translate-y-[-4px] transition-all duration-300">
-        <div class="w-20 h-20 mb-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center">
-          <span class="text-emerald-400 text-xs font-mono">IMG_03</span>
-        </div>
-        <h3 class="text-xl font-bold text-white mb-1">터틀맨</h3>
-        <p class="text-xs font-mono text-emerald-400 mb-4">MEMBER PROFILE</p>
-        <p class="text-gray-400 text-xs leading-relaxed">커뮤니티 운용 및 리서치 자료 수집 파이프라인 관리를 담당합니다.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. 미국 증시 터미널 (M7, 쿠팡, 마벨, 하이닉스 ADR) -->
-  <section id="market" class="py-24 px-6 border-y border-emerald-500/10 bg-emerald-950/[0.05] fade-in-section">
-    <div class="max-w-7xl mx-auto">
-      <div class="flex flex-col md:flex-row md:items-end justify-between mb-8">
-        <div>
-          <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">02 // US EQUITY TERMINAL</span>
-          <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">미국 증시 파이프라인</h2>
-        </div>
-        <span class="text-xs font-mono text-gray-400 mt-2 md:mt-0">M7 & CORE TECH TICKERS SYNC</span>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <!-- 티커 스크롤 목록 (높이 고정 및 커스텀 스크롤) -->
-        <div id="stock-list" class="space-y-3 max-h-[360px] overflow-y-auto pr-2 custom-scroll">
-          <div class="text-xs text-emerald-400 font-mono p-4">미국 실시간 주가 동기화 중...</div>
-        </div>
-        
-        <!-- 나스닥 지수 차트 -->
-        <div class="lg:col-span-2 glass-card p-6 rounded-2xl">
-          <div class="flex justify-between items-center mb-4">
-            <span class="text-xs font-mono text-emerald-400 font-bold">NASDAQ INDEX 1D TREND</span>
-            <span class="text-[10px] font-mono text-gray-500">15m Interval</span>
-          </div>
-          <div class="h-72 w-full"><canvas id="marketChart"></canvas></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 5. 투자 칼럼 -->
-  <section id="column" class="py-24 px-6 max-w-7xl mx-auto fade-in-section">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12">
-      <div>
-        <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">03 // INSIGHTS</span>
-        <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">투자 칼럼</h2>
-      </div>
-      <button onclick="openPostModal()" class="mt-6 sm:mt-0 bg-brandWine hover:bg-brandWineHover text-white font-bold px-5 py-3 rounded-xl text-xs transition-colors flex items-center gap-2 shadow-lg shadow-rose-950/40">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        <span>칼럼 작성</span>
-      </button>
-    </div>
-
-    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-  </section>
-
-  <!-- 작성 모달 -->
-  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-[#0f172a] border border-emerald-500/20 w-full max-w-2xl rounded-2xl p-6 sm:p-8 relative shadow-2xl">
-      <div class="flex justify-between items-center mb-6 border-b border-emerald-500/10 pb-4">
-        <h3 class="text-lg font-bold text-white">칼럼 작성</h3>
-        <button onclick="closePostModal()" class="text-gray-400 hover:text-white">✕</button>
-      </div>
-
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <input type="text" id="post-category" placeholder="카테고리 (예: 매크로, 퀀트)" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-400">
-          <input type="text" id="post-author" placeholder="작성자 닉네임" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-white outline-none focus:border-emerald-400">
-        </div>
-        <input type="text" id="post-title" placeholder="칼럼 제목" class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl px-4 py-3 text-sm font-semibold text-white outline-none focus:border-emerald-400">
-        <textarea id="post-content" rows="10" placeholder="자유롭게 칼럼 본문을 작성해 주세요..." class="w-full bg-slate-900/80 border border-emerald-500/20 rounded-xl p-4 text-xs text-white outline-none focus:border-emerald-400 leading-relaxed resize-y"></textarea>
-      </div>
-
-      <div class="flex justify-end space-x-3 mt-6">
-        <button onclick="closePostModal()" class="bg-slate-800 text-gray-400 px-5 py-2.5 rounded-xl text-xs">취소</button>
-        <button onclick="publishPost()" class="bg-brandWine hover:bg-brandWineHover text-white font-bold px-6 py-2.5 rounded-xl text-xs transition-colors">게시</button>
+      <!-- Auth Form Box -->
+      <div class="bg-bbPanel border border-bbBorder p-4 rounded max-w-md mx-auto space-y-3">
+        <input type="password" id="auth-code-input" placeholder="ACCESS CODE" 
+               class="w-full bg-black border border-bbBorder px-3 py-2 text-center text-xs text-bbAmber outline-none focus:border-bbAmber font-mono"
+               onkeypress="if(event.key==='Enter') authenticateUser()">
+        <button onclick="authenticateUser()" class="w-full bg-bbAmber text-black font-extrabold py-2 text-xs hover:bg-yellow-400">
+          AUTHENTICATE SYSTEM
+        </button>
+        <div id="auth-error" class="text-bbRed text-[10px] hidden">&gt; ERROR: INVALID OPERATOR CODE</div>
       </div>
     </div>
   </div>
 
-  <!-- 6. 카카오톡 실시간 토론방 -->
-  <section id="chat" class="py-24 px-6 border-t border-emerald-500/10 bg-emerald-950/[0.05] fade-in-section">
-    <div class="max-w-2xl mx-auto">
-      <div class="mb-8 text-center">
-        <span class="text-xs font-mono tracking-widest text-emerald-400 uppercase block mb-2">04 // COMMUNITY</span>
-        <h2 class="text-3xl font-black text-white tracking-tight">오픈 토론방</h2>
+  <!-- TOP SYSTEM HEADER & REALTIME FUND TICKER -->
+  <header class="bg-black border-b border-bbBorder text-[11px] p-1.5 flex flex-col gap-1 z-10 shrink-0">
+    <div class="flex justify-between items-center px-2">
+      <div class="flex items-center space-x-3">
+        <span class="bg-bbAmber text-black font-extrabold px-1.5 py-0.5 tracking-tighter">BLOOMBERG // CHEOLMA</span>
+        <span id="user-badge" class="text-bbGreen font-bold tracking-widest">[SYS_OK: GUEST]</span>
       </div>
-
-      <div class="bg-[#A9BDCE] rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[500px]">
-        <div class="bg-[#9bb0c1] px-5 py-3 border-b border-black/10 flex items-center justify-between text-gray-900">
-          <span class="font-bold text-xs">철마스트리트 라이브 토론</span>
-          <span class="text-[10px] bg-brandWine text-white px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
-        </div>
-
-        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto custom-scroll space-y-4 text-xs text-gray-900">
-          <div class="text-center my-1"><span class="bg-black/10 text-gray-700 text-[10px] px-3 py-1 rounded-full">실시간 클라우드 보존 구역입니다.</span></div>
-        </div>
-
-        <div class="bg-white p-3 border-t border-gray-200 flex items-center space-x-2">
-          <input type="text" id="chat-id" placeholder="ID" class="w-20 bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 outline-none">
-          <input type="text" id="chat-txt" placeholder="메시지 입력..." class="flex-1 bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
-          <button onclick="pushMessageToCloud()" class="bg-kakaoYellow text-gray-900 font-bold px-4 py-2 rounded-xl text-xs">전송</button>
-        </div>
+      <div class="flex items-center space-x-4 font-mono text-gray-400">
+        <span id="sys-clock" class="text-bbAmber font-bold">00:00:00 UTC</span>
+        <span class="text-xs text-bbGreen">● LIVE</span>
       </div>
     </div>
-  </section>
+    
+    <!-- Realtime Ticker Bar (Includes CHEOLMA FUND) -->
+    <div class="bg-bbPanel border border-bbBorder px-2 py-1 overflow-x-auto whitespace-nowrap text-[10px] text-gray-300 flex items-center space-x-6 font-mono">
+      <div class="flex items-center space-x-2 bg-bbAmber/10 border border-bbAmber/30 px-2 py-0.5 rounded">
+        <strong class="text-bbAmber">[CHEOLMA FUND]</strong>
+        <span id="fund-nav-text" class="text-white font-bold">$1,000,000</span>
+        <span id="fund-ratio-text" class="text-bbGreen">+0.00%</span>
+        <!-- 복어왕 전용 펀드 관리 버튼 -->
+        <button id="admin-fund-btn" onclick="openFundModal()" class="hidden bg-bbAmber text-black font-bold text-[9px] px-1.5 py-0.2 hover:bg-yellow-400">
+          EDIT
+        </button>
+      </div>
 
-  <footer class="py-12 border-t border-emerald-500/10 text-center text-xs font-mono text-gray-600">&copy; 2026 CHEOLMA STREET.</footer>
+      <span><strong class="text-bbAmber">NVDA</strong> 128.50 <span class="text-bbGreen">+2.4%</span></span>
+      <span><strong class="text-bbAmber">AAPL</strong> 224.20 <span class="text-bbRed">-0.8%</span></span>
+      <span><strong class="text-bbAmber">MSFT</strong> 448.90 <span class="text-bbGreen">+1.1%</span></span>
+      <span><strong class="text-bbAmber">AMZN</strong> 186.30 <span class="text-bbGreen">+0.5%</span></span>
+    </div>
+  </header>
 
+  <!-- MAIN TAB CONTENT CONTAINER -->
+  <main class="flex-1 overflow-hidden p-2 relative bg-bbBlack">
+    <!-- 1. TERMINAL & MARKET TAB -->
+    <section id="tab-market" class="tab-content active h-full flex-col lg:flex-row gap-2">
+      <div class="w-full lg:w-1/3 bb-box flex flex-col">
+        <div class="bb-box-header">
+          <span>EQUITY_DATA_STREAM [US_M7]</span>
+          <span class="text-bbBlue text-[9px]">API: ONLINE</span>
+        </div>
+        <div id="stock-list" class="flex-1 overflow-y-auto p-1 space-y-1 font-mono text-xs">
+          <div class="text-bbAmber p-2 animate-pulse">&gt; INITIALIZING FEED...</div>
+        </div>
+      </div>
+
+      <div class="w-full lg:w-2/3 flex flex-col gap-2">
+        <div class="bb-box flex-1 flex flex-col">
+          <div class="bb-box-header">
+            <span id="chart-title">NASDAQ COMPOSITE 1D REAL-TIME MONITOR</span>
+            <span class="text-bbAmber">TICK: 15m</span>
+          </div>
+          <div class="flex-1 p-2 relative">
+            <canvas id="marketChart" class="w-full h-full"></canvas>
+          </div>
+        </div>
+        
+        <div class="bb-box p-2 text-[10px] grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
+          <div><span class="text-gray-500">QUANT RATIO:</span> <span class="text-bbGreen">1.42 (BULL)</span></div>
+          <div><span class="text-gray-500">VOLATILITY (VIX):</span> <span class="text-bbAmber">16.20</span></div>
+          <div><span class="text-gray-500">LATENCY:</span> <span class="text-bbBlue">14ms</span></div>
+          <div><span class="text-gray-500">ALGO MODE:</span> <span class="text-bbGreen font-bold">EXEC_ACTIVE</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. TEAM / MEMBERS TAB -->
+    <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
+      <div class="bb-box h-full flex flex-col p-4">
+        <div class="bb-box-header mb-4">
+          <span>OPERATIONAL_CORE // LEADERSHIP_PROFILES</span>
+          <span>SYS_VER: 4.0</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40">
+            <div>
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_01] 복어왕</div>
+              <div class="text-xs text-bbGreen mb-3">&gt; ROLE: CHIEF EXEC / STRATEGIST</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">철마스트리트 총괄 리더십. 펀드 포트폴리오 제어 권한 보유.</p>
+            </div>
+          </div>
+          <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40">
+            <div>
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_02] 아쿠마</div>
+              <div class="text-xs text-bbBlue mb-3">&gt; ROLE: QUANT ALGO ENGINEER</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩 알고리즘 모듈 구축.</p>
+            </div>
+          </div>
+          <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40">
+            <div>
+              <div class="text-bbAmber font-bold text-base mb-1">[USER_03] 터틀맨</div>
+              <div class="text-xs text-bbAmber mb-3">&gt; ROLE: INFRA & DATA PIPELINE</div>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 데이터 수집 크롤러 모듈 인프라 관리.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. INSIGHT COLUMN TAB -->
+    <section id="tab-column" class="tab-content h-full flex-col">
+      <div class="bb-box h-full flex flex-col">
+        <div class="bb-box-header">
+          <span>INVESTMENT_RESEARCH_COLUMN</span>
+          <button onclick="openPostModal()" class="bg-bbAmber text-black text-[10px] font-bold px-2 py-0.5 hover:bg-yellow-400">+ NEW_POST</button>
+        </div>
+        <div id="post-grid" class="flex-1 overflow-y-auto p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"></div>
+      </div>
+    </section>
+
+    <!-- 4. IRC COMMUNITY CHAT TAB -->
+    <section id="tab-chat" class="tab-content h-full flex-col">
+      <div class="bb-box h-full flex flex-col">
+        <div class="bb-box-header">
+          <span>IRC_CHAT_ROOM // #CHEOLMA_REALTIME</span>
+          <span class="text-bbGreen font-normal">ENCRYPTED_SSL</span>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs font-mono bg-black">
+          <div class="text-gray-600 text-[10px] border-b border-bbBorder pb-1">&gt; CONNECTED TO NETWORK SERVER NODE [ASIA-SE-1]</div>
+        </div>
+        <div class="bg-bbPanel p-2 border-t border-bbBorder flex items-center space-x-2">
+          <span class="text-bbAmber text-xs font-bold">&gt;_</span>
+          <input type="text" id="chat-id" placeholder="ID" class="w-20 bg-black border border-bbBorder px-2 py-1 text-xs text-bbAmber outline-none">
+          <input type="text" id="chat-txt" placeholder="Input message..." class="flex-1 bg-black border border-bbBorder px-2 py-1 text-xs text-bbGreen outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
+          <button onclick="pushMessageToCloud()" class="bg-bbAmber text-black font-bold text-xs px-4 py-1 hover:bg-yellow-400">SEND</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- APP-STYLE BOTTOM NAVIGATION -->
+  <nav class="bg-black border-t border-bbBorder grid grid-cols-4 text-center z-10 shrink-0 font-mono text-xs">
+    <button onclick="switchTab('market')" id="nav-market" class="py-3 text-bbAmber border-t-2 border-bbAmber font-bold bg-bbPanel flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F1</span><span>[TERMINAL]</span></button>
+    <button onclick="switchTab('team')" id="nav-team" class="py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F2</span><span>[TEAM]</span></button>
+    <button onclick="switchTab('column')" id="nav-column" class="py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F3</span><span>[COLUMN]</span></button>
+    <button onclick="switchTab('chat')" id="nav-chat" class="py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F4</span><span>[IRC_CHAT]</span></button>
+  </nav>
+
+  <!-- 복어왕 전용 펀드 구성요소 편집 모달 -->
+  <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-md p-4 font-mono">
+      <div class="bb-box-header -m-4 mb-4">
+        <span>EDIT_CHEOLMA_FUND_PORTFOLIO (ADMIN ONLY)</span>
+        <button onclick="closeFundModal()" class="text-bbRed font-bold">X</button>
+      </div>
+      <div class="space-y-3">
+        <p class="text-[10px] text-gray-400">&gt; 각 종목의 구성 비중(%)을 설정하세요. (총합 100%)</p>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">NVIDIA (NVDA):</span><input type="number" id="weight-nvda" value="40" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">BITCOIN (BTC):</span><input type="number" id="weight-btc" value="30" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">APPLE (AAPL):</span><input type="number" id="weight-aapl" value="20" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">CASH (USD):</span><input type="number" id="weight-cash" value="10" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
+        </div>
+      </div>
+      <div class="flex justify-end space-x-2 mt-6">
+        <button onclick="closeFundModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
+        <button onclick="updateFundPortfolio()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">APPLY REALTIME</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT CONTROLLER -->
   <script>
+    // 복어왕 / 아쿠마 / 터틀맨 접근 고유 인증 코드
+    const AUTH_CODES = {
+      "BOGEO-0624": { name: "복어왕", role: "ADMIN", level: "L5" },
+      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR", level: "L4" },
+      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR", level: "L4" }
+    };
+
+    let currentUser = null;
     let currentChart = null;
+    let globalChartLabels = [];
     const BACKEND_URL = "https://cheolma-backend.onrender.com";
 
-    function toggleMobileMenu() {
-      document.getElementById('mobile-menu').classList.toggle('hidden');
+    // 인증 함수
+    function authenticateUser() {
+      const input = document.getElementById('auth-code-input').value.trim();
+      if (AUTH_CODES[input]) {
+        currentUser = AUTH_CODES[input];
+        
+        // UI 반영
+        document.getElementById('user-badge').innerText = `[USER: ${currentUser.name} // ${currentUser.level}]`;
+        document.getElementById('chat-id').value = currentUser.name;
+        
+        // 복어왕일 경우 펀드 수정 버튼 활성화
+        if (currentUser.role === "ADMIN") {
+          document.getElementById('admin-fund-btn').classList.remove('hidden');
+        }
+
+        // 인트로 화면 닫기
+        const intro = document.getElementById('intro-screen');
+        intro.style.transition = 'opacity 0.5s ease';
+        intro.style.opacity = '0';
+        setTimeout(() => intro.style.display = 'none', 500);
+      } else {
+        document.getElementById('auth-error').classList.remove('hidden');
+      }
     }
-    function openPostModal() { document.getElementById('post-modal').classList.remove('hidden'); }
-    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
+
+    function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
+    function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
+
+    // Firebase 펀드 구성요소 실시간 업데이트 및 수신
+    function updateFundPortfolio() {
+      if (!window.dbSet || !window.fundRef) return;
+
+      const nvda = parseFloat(document.getElementById('weight-nvda').value) || 0;
+      const btc = parseFloat(document.getElementById('weight-btc').value) || 0;
+      const aapl = parseFloat(document.getElementById('weight-aapl').value) || 0;
+      const cash = parseFloat(document.getElementById('weight-cash').value) || 0;
+
+      window.dbSet(window.fundRef, {
+        nvda: nvda,
+        btc: btc,
+        aapl: aapl,
+        cash: cash,
+        updatedBy: currentUser ? currentUser.name : "ADMIN",
+        timestamp: new Date().toISOString()
+      });
+
+      closeFundModal();
+    }
+
+    // Firebase DB 펀드 리스너 연결 (모든 사용자가 실시간 수신)
+    function listenFundUpdates() {
+      if (window.onValue && window.fundRef) {
+        window.onValue(window.fundRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            // 비중에 따른 가상 NAV 계산 (기준 $1,000,000)
+            const baseValue = 1000000;
+            const simulatedGain = (data.nvda * 0.024) + (data.btc * 0.018) + (data.aapl * -0.008);
+            const totalNav = baseValue * (1 + (simulatedGain / 100));
+            
+            document.getElementById('fund-nav-text').innerText = `$${Math.round(totalNav).toLocaleString()}`;
+            document.getElementById('fund-ratio-text').innerText = `${simulatedGain >= 0 ? '+' : ''}${simulatedGain.toFixed(2)}%`;
+            document.getElementById('fund-ratio-text').className = simulatedGain >= 0 ? 'text-bbGreen' : 'text-bbRed';
+          }
+        });
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('nav button').forEach(el => {
+        el.className = 'py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5';
+      });
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      document.getElementById(`nav-${tabId}`).className = 'py-3 text-bbAmber border-t-2 border-bbAmber font-bold bg-bbPanel flex flex-col items-center justify-center gap-0.5';
+    }
+
+    function updateClock() {
+      document.getElementById('sys-clock').innerText = new Date().toUTCString().split(' ')[4] + " UTC";
+    }
+    setInterval(updateClock, 1000);
 
     document.addEventListener("DOMContentLoaded", () => {
-      const sections = document.querySelectorAll('.fade-in-section');
-      const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('is-visible') }), {threshold:0.1});
-      sections.forEach(s => obs.observe(s));
-      
-      // 미국 증시 로딩 자동 호출
+      initParticleCanvas();
       loadUSMarketData();
 
       setTimeout(() => {
-        if(window.onChildAdded) {
-          if(window.chatRef) {
-            window.onChildAdded(window.chatRef, (data) => {
-              const msgObj = data.val();
-              displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
-            });
-          }
-          if(window.postRef) {
-            window.onChildAdded(window.postRef, (data) => {
-              const p = data.val();
-              displayPostCard(p.category, p.author, p.title, p.content, p.date);
-            });
-          }
+        listenFundUpdates();
+        if(window.onChildAdded && window.chatRef) {
+          window.onChildAdded(window.chatRef, (data) => {
+            const msgObj = data.val();
+            displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
+          });
         }
       }, 1200);
     });
 
-    async function loadUSMarketData(retryCount = 0) {
-	  const list = document.getElementById('stock-list');
-	  
-	  if (retryCount === 0) {
-		list.innerHTML = `<div class="text-xs text-emerald-400 font-mono p-4 animate-pulse">백엔드 서버 깨우는 중... (약 20초 소요될 수 있음)</div>`;
-	  }
+    function initParticleCanvas() {
+      const canvas = document.getElementById('intro-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+      let mouse = { x: width / 2, y: height / 2, radius: 120 };
 
-	  try {
-		// 15초 타임아웃 컨트롤러
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 15000);
+      window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
+      window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
 
-		const response = await fetch(`${BACKEND_URL}/api/us-market`, { signal: controller.signal });
-		clearTimeout(timeoutId);
+      const particles = Array.from({length: 60}, () => ({
+        x: Math.random() * width, y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, size: Math.random() * 2 + 1
+      }));
 
-		if (!response.ok) throw new Error("Server status not OK");
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+          ctx.fillStyle = '#ff9900'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
 
-		const data = await response.json();
-		renderStockUI(data.stockList);
-		renderChartUI(data.chartLabels, data.chartData);
-	  } catch (error) {
-		console.warn(`접속 시도 ${retryCount + 1}회 실패:`, error);
-		
-		if (retryCount < 3) {
-		  list.innerHTML = `<div class="text-xs text-emerald-400 font-mono p-4 animate-pulse">서버 깨우는 중 (${retryCount + 1}/3)... 잠시만 기다려주세요.</div>`;
-		  // 5초 후 재시도
-		  setTimeout(() => loadUSMarketData(retryCount + 1), 5000);
-		} else {
-		  list.innerHTML = `<div class="text-xs text-rose-400 font-mono p-4">증시 데이터 연결 안 됨 (서버 상태를 확인하세요)</div>`;
-		}
-	  }
-	}
+    async function loadUSMarketData() {
+      const list = document.getElementById('stock-list');
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/us-market`);
+        const data = await response.json();
+        globalChartLabels = data.chartLabels || ["09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30"];
+        renderStockUI(data.stockList);
+        renderChartUI("NASDAQ COMPOSITE", globalChartLabels, data.chartData);
+      } catch (error) {
+        list.innerHTML = `<div class="text-xs text-bbAmber p-2">&gt; OFFLINE / LOCAL DATA PIPELINE</div>`;
+      }
+    }
 
     function renderStockUI(dataList) {
-      const list = document.getElementById('stock-list');
-      list.innerHTML = dataList.map(i => `
-        <div class="glass-card p-3.5 rounded-xl flex justify-between items-center">
-          <div><h4 class="font-bold text-white text-xs">${i.name}</h4></div>
-          <div class="text-right">
-            <div class="font-bold text-xs text-gray-200">${i.price}</div>
-            <div class="text-[10px] ${i.change.includes('▲') ? 'text-rose-400' : 'text-emerald-400'}">${i.change}</div>
-          </div>
+      document.getElementById('stock-list').innerHTML = dataList.map((i, idx) => `
+        <div onclick="selectStock('${i.name}', '${i.price}', '${i.change}', this)" class="stock-item bg-black border border-bbBorder p-2 flex justify-between items-center ${idx === 0 ? 'active' : ''}">
+          <div class="font-bold text-white">${i.name}</div>
+          <div class="text-right"><div class="text-gray-200 font-bold">${i.price}</div><div class="text-[10px] ${i.change.includes('▲') ? 'text-bbRed' : 'text-bbGreen'}">${i.change}</div></div>
         </div>
       `).join('');
     }
 
-    function renderChartUI(labels, chartData) {
+    function selectStock(name, price, changeStr, element) {
+      document.querySelectorAll('.stock-item').forEach(el => el.classList.remove('active'));
+      if(element) element.classList.add('active');
+      document.getElementById('chart-title').innerText = `${name.toUpperCase()} MONITOR [${changeStr}]`;
+      renderChartUI(name, globalChartLabels, Array.from({length: 10}, () => Math.random() * 10 + 100));
+    }
+
+    function renderChartUI(title, labels, chartData) {
       const ctx = document.getElementById('marketChart').getContext('2d');
       if (currentChart) currentChart.destroy();
-      
       currentChart = new Chart(ctx, {
         type: 'line',
-        data: { 
-          labels: labels, 
-          datasets: [{ 
-            data: chartData, 
-            borderColor: '#10b981', 
-            borderWidth: 2, 
-            fill: false,
-            pointRadius: 0
-          }] 
-        },
-        options: { 
-          responsive: true, 
-          maintainAspectRatio: false, 
-          plugins: { legend: { display: false } } 
-        }
+        data: { labels: labels, datasets: [{ data: chartData, borderColor: '#ff9900', borderWidth: 1.5, fill: false, pointRadius: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
     }
 
-    function publishPost() {
-      const cat = document.getElementById('post-category').value.trim() || '시황 오피니언';
-      const author = document.getElementById('post-author').value.trim() || '익명';
-      const title = document.getElementById('post-title').value.trim();
-      const content = document.getElementById('post-content').value.trim();
-
-      if (!title || !content || !window.dbPush || !window.postRef) return;
-      const dateStr = new Date().toLocaleDateString();
-
-      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
-      document.getElementById('post-title').value = '';
-      document.getElementById('post-content').value = '';
-      closePostModal();
-    }
-
-    function displayPostCard(cat, author, title, content, date) {
-      const grid = document.getElementById('post-grid');
-      const cardHtml = `
-        <article class="glass-card rounded-2xl p-6 flex flex-col justify-between hover:translate-y-[-2px] transition-all">
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20">${cat}</span>
-              <span class="text-gray-500 text-xs font-mono">${date}</span>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-3 leading-snug">${title}</h3>
-            <p class="text-gray-300 text-xs leading-relaxed column-content mb-4">${content}</p>
-          </div>
-          <div class="mt-4 pt-4 border-t border-emerald-500/10 text-xs text-gray-500 flex justify-between items-center">
-            <span>작성자: <strong class="text-gray-300">${author}</strong></span>
-          </div>
-        </article>
-      `;
-      grid.insertAdjacentHTML('afterbegin', cardHtml);
-    }
-
     function pushMessageToCloud() {
-      const idIn = document.getElementById('chat-id');
       const txtIn = document.getElementById('chat-txt');
-      const nickname = idIn.value.trim() || '익명';
-      const message = txtIn.value.trim();
-
-      if (!message || !window.dbPush || !window.chatRef) return;
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      window.dbPush(window.chatRef, { nickname: nickname, message: message, timestamp: timeStr });
+      const nickname = currentUser ? currentUser.name : 'GUEST';
+      if (!txtIn.value.trim() || !window.dbPush) return;
+      window.dbPush(window.chatRef, { nickname: nickname, message: txtIn.value.trim(), timestamp: new Date().toLocaleTimeString() });
       txtIn.value = '';
     }
 
     function displayMessageNode(name, text, time) {
       const chatWin = document.getElementById('chat-messages');
-      const nodeHtml = `
-        <div class="flex items-start space-x-2">
-          <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-700 text-[10px]">${name.substring(0,2)}</div>
-          <div>
-            <span class="text-[11px] text-gray-600 block mb-0.5">${name}</span>
-            <div class="flex items-end space-x-1">
-              <div class="bg-white p-2.5 rounded-r-xl rounded-bl-xl shadow-sm max-w-xs leading-normal text-gray-950">${text}</div>
-              <span class="text-[9px] text-gray-500">${time}</span>
-            </div>
-          </div>
-        </div>
-      `;
-      chatWin.insertAdjacentHTML('beforeend', nodeHtml);
+      chatWin.insertAdjacentHTML('beforeend', `<div><span class="text-gray-500">[${time}]</span> <span class="text-bbAmber font-bold">&lt;${name}&gt;</span> <span class="text-gray-200">${text}</span></div>`);
       chatWin.scrollTop = chatWin.scrollHeight;
     }
   </script>
