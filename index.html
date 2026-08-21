@@ -255,9 +255,9 @@
       </div>
     </section>
 
-    <!-- 2. MARKET TAB (수정됨: 3x2 대시보드 및 실시간 토스증권 API 파이프라인) -->
+    <!-- 2. MARKET TAB (3x2 증권사 대시보드 레이아웃) -->
     <section id="tab-market" class="tab-content h-full flex-col gap-2">
-      <!-- 검색바 및 API 토글 컨트롤 바 -->
+      <!-- 검색바 및 API 서브 컨트롤 -->
       <div class="bb-box p-2 flex flex-wrap items-center justify-between gap-2 font-mono shrink-0">
         <div class="flex items-center gap-2 flex-1 min-w-[280px]">
           <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
@@ -409,7 +409,7 @@
       </div>
     </section>
 
-    <!-- 3. TEAM / MEMBERS TAB -->
+    <!-- 3. TEAM / MEMBERS TAB (수정됨: Vercel 서버 호스팅 프로필 이미지 경로 정상 적용) -->
     <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4">
         <div class="bb-box-header mb-3 shrink-0">
@@ -577,7 +577,7 @@
     </div>
   </div>
 
-  <!-- 토스 API 전용 인라인 모달 패널 -->
+  <!-- 토스 API 전용 모달 패널 -->
   <div id="toss-data-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bb-box w-full max-w-2xl p-4 font-mono flex flex-col max-h-[80vh]">
       <div class="bb-box-header -m-4 mb-4">
@@ -735,9 +735,9 @@
       renderOverviewChart();
       initMultiCharts();
 
-      // 3초마다 토스증권 API 기반으로 실시간 시세 및 X축 시간 갱신
+      // 3초마다 토스증권 API 실제 시세 수신
       setInterval(() => {
-        INITIAL_SYMBOLS.forEach(symbol => fetchStockPrice(symbol));
+        INITIAL_SYMBOLS.forEach(symbol => loadRealStockChart(symbol));
       }, 3000);
 
       setTimeout(() => {
@@ -844,29 +844,21 @@
       document.getElementById('toss-data-modal').classList.add('hidden');
     }
 
-    /* 이중 차트(가격 라인 + 거래량 막대) 초기화 */
+    /* 3x2 차트 캔버스 인스턴스 초기 생성 */
     function initMultiCharts() {
       INITIAL_SYMBOLS.forEach(symbol => {
         const canvas = document.getElementById(`chart-${symbol}`);
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        const initialLabels = Array.from({length: 8}, (_, i) => {
-          const d = new Date(Date.now() - (7 - i) * 60000);
-          return d.toTimeString().split(' ')[0].substring(0, 5);
-        });
-
-        const initialPrices = [100, 101, 100.5, 102, 101.8, 103, 102.5, 103.5];
-        const initialVolumes = [120, 200, 150, 300, 220, 400, 280, 350];
-
         multiCharts[symbol] = new Chart(ctx, {
           data: {
-            labels: initialLabels,
+            labels: [],
             datasets: [
               {
                 type: 'line',
                 label: 'Price',
-                data: initialPrices,
+                data: [],
                 borderColor: '#ff3333',
                 backgroundColor: 'rgba(255, 51, 51, 0.05)',
                 borderWidth: 2,
@@ -877,7 +869,7 @@
               {
                 type: 'bar',
                 label: 'Volume',
-                data: initialVolumes,
+                data: [],
                 backgroundColor: 'rgba(255, 153, 0, 0.25)',
                 borderColor: 'rgba(255, 153, 0, 0.5)',
                 borderWidth: 1,
@@ -892,49 +884,37 @@
             scales: {
               x: { grid: { display: false }, ticks: { color: '#555555', font: { size: 8 } } },
               y: { position: 'right', grid: { color: '#1a1a1a' }, ticks: { color: '#666666', font: { size: 8 } } },
-              yVolume: { position: 'left', display: false, max: 1500, grid: { display: false } }
+              yVolume: { position: 'left', display: false, grid: { display: false } }
             }
           }
         });
-        fetchStockPrice(symbol);
+        loadRealStockChart(symbol);
       });
     }
 
-    function updateRealtimeChart(symbol, newPrice, newVolume = 300) {
-      const chart = multiCharts[symbol];
-      if (!chart) return;
-
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
-
-      const priceData = chart.data.datasets[0].data;
-      const lastPrice = priceData.length > 0 ? priceData[priceData.length - 1] : newPrice;
-      const isUp = newPrice >= lastPrice;
-
-      const color = isUp ? '#ff3333' : '#00bcff';
-      chart.data.datasets[0].borderColor = color;
-      chart.data.datasets[0].backgroundColor = isUp ? 'rgba(255, 51, 51, 0.05)' : 'rgba(0, 188, 255, 0.05)';
-
-      chart.data.labels.push(timeStr);
-      chart.data.datasets[0].data.push(newPrice);
-      chart.data.datasets[1].data.push(newVolume);
-
-      if (chart.data.labels.length > 12) {
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-        chart.data.datasets[1].data.shift();
-      }
-      chart.update('none');
-    }
-
-    async function fetchStockPrice(symbol) {
+    /* 토스 API 실제 캔들 시세 수신 및 동적 갱신 */
+    async function loadRealStockChart(symbol) {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/toss/prices/${symbol}`);
-        const data = await res.json();
+        const candleRes = await fetch(`${BACKEND_URL}/api/toss/candles/${symbol}`);
+        const candleData = await candleRes.json();
 
-        if (data.result && data.result.length > 0) {
-          const item = data.result[0];
-          const price = item.close || item.price || item.currentPrice || 0;
+        const priceRes = await fetch(`${BACKEND_URL}/api/toss/prices/${symbol}`);
+        const priceData = await priceRes.json();
+
+        let labels = [];
+        let prices = [];
+        let volumes = [];
+
+        if (candleData.result && candleData.result.length > 0) {
+          const candles = candleData.result.slice(-12);
+          labels = candles.map(c => new Date(c.timestamp || c.time).toTimeString().substring(0, 5));
+          prices = candles.map(c => c.close || c.price);
+          volumes = candles.map(c => c.volume || 0);
+        }
+
+        if (priceData.result && priceData.result.length > 0) {
+          const item = priceData.result[0];
+          const price = item.close || item.price || 0;
           const change = item.change || 0;
           const changeRate = item.changeRate || 0;
 
@@ -954,11 +934,28 @@
               changeElem.className = `text-xs font-mono font-bold ${colorClass}`;
             }
 
-            updateRealtimeChart(symbol, price, Math.floor(Math.random() * 400) + 100);
+            if (prices.length === 0) {
+              labels = [new Date().toTimeString().substring(0, 5)];
+              prices = [price];
+              volumes = [item.volume || 0];
+            }
           }
         }
+
+        if (multiCharts[symbol] && prices.length > 0) {
+          const chart = multiCharts[symbol];
+          chart.data.labels = labels;
+          chart.data.datasets[0].data = prices;
+          chart.data.datasets[1].data = volumes;
+
+          const isUp = prices[prices.length - 1] >= prices[0];
+          chart.data.datasets[0].borderColor = isUp ? '#ff3333' : '#00bcff';
+          chart.data.datasets[0].backgroundColor = isUp ? 'rgba(255, 51, 51, 0.05)' : 'rgba(0, 188, 255, 0.05)';
+
+          chart.update('none');
+        }
       } catch (err) {
-        console.log(`Fetch Error (${symbol}):`, err);
+        console.log(`Chart Fetch Error (${symbol}):`, err);
       }
     }
 
