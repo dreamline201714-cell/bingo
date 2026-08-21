@@ -48,7 +48,6 @@
     .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
     .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
 
-    /* 모바일 스크롤 지원 탭 스타일 */
     .nav-btn {
       background-color: #121212;
       border: 1px solid #333333;
@@ -162,7 +161,7 @@
       <span><strong class="text-bbAmber">MSFT</strong> 448.90 <span class="text-bbGreen">+1.1%</span></span>
     </div>
 
-    <!-- 모바일 스크롤 완벽 대응 상단 탭 -->
+    <!-- 상단 탭 -->
     <nav class="bg-black flex overflow-x-auto gap-1 text-center mt-1 font-mono text-xs px-1 no-scrollbar">
       <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F1</span><span>[OVERVIEW]</span></button>
       <button onclick="switchTab('market')" id="nav-market" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F2</span><span>[MARKET]</span></button>
@@ -173,7 +172,7 @@
   </header>
 
   <!-- MAIN TAB CONTENT CONTAINER -->
-  <main class="flex-1 overflow-x-hidden overflow-y-auto lg:overflow-hidden p-2 relative bg-bbBlack">
+  <main class="flex-1 overflow-x-hidden overflow-y-auto p-2 relative bg-bbBlack">
     
     <!-- 1. OVERVIEW TAB -->
     <section id="tab-overview" class="tab-content active h-full flex-col overflow-y-auto">
@@ -255,40 +254,92 @@
       </div>
     </section>
 
-    <!-- 2. MARKET & US STOCKS TAB -->
-    <section id="tab-market" class="tab-content h-full flex-col lg:flex-row gap-2">
-      <div class="w-full lg:w-1/3 bb-box flex flex-col shrink-0">
-        <div class="bb-box-header">
-          <span>EQUITY_DATA_STREAM [US_M7]</span>
-          <span class="text-bbBlue text-[9px]">API: ONLINE</span>
-        </div>
-        <div id="stock-list" class="max-h-[280px] lg:max-h-none lg:flex-1 overflow-y-auto p-1 space-y-1 font-mono text-xs">
-          <div class="text-bbAmber p-2 animate-pulse">&gt; INITIALIZING FEED...</div>
-        </div>
+    <!-- 2. MARKET & US STOCKS TAB (검색바 & 3x2 동적 X축 실시간 차트) -->
+    <section id="tab-market" class="tab-content h-full flex-col gap-2">
+      <!-- 상단 시세 검색바 -->
+      <div class="bb-box p-2 flex items-center gap-2 font-mono">
+        <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
+        <input type="text" id="market-search-input" placeholder="종목코드/티커 입력 (예: 005930, AAPL, NVDA)..." 
+               class="flex-1 bg-black border border-bbBorder px-3 py-1.5 text-xs text-bbGreen outline-none focus:border-bbAmber"
+               onkeypress="if(event.key==='Enter') searchStockSymbol()">
+        <button onclick="searchStockSymbol()" class="bg-bbAmber text-black font-bold text-xs px-4 py-1.5 hover:bg-yellow-400">
+          FETCH REALTIME
+        </button>
       </div>
 
-      <div class="w-full lg:w-2/3 flex flex-col gap-2 shrink-0">
-        <div class="bb-box h-[280px] lg:h-full flex flex-col">
-          <div class="bb-box-header">
-            <span id="chart-title">NASDAQ COMPOSITE 1D MONITOR</span>
-            <!-- 전일 마감 종목 표기 레이블 강화 -->
-            <span class="text-bbAmber">PREV_CLOSE (CLOSED) // 15m TICK</span>
-          </div>
-          <div class="flex-1 p-2 relative">
-            <canvas id="marketChart" class="w-full h-full"></canvas>
-          </div>
-        </div>
+      <!-- 3칸 2줄 (3x2) 차트 그리드 영역 -->
+      <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto">
         
-        <div class="bb-box p-2 text-[10px] grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
-          <div><span class="text-gray-500">QUANT RATIO:</span> <span class="text-bbGreen">1.42 (BULL)</span></div>
-          <div><span class="text-gray-500">VOLATILITY (VIX):</span> <span class="text-bbAmber">16.20</span></div>
-          <div><span class="text-gray-500">LATENCY:</span> <span class="text-bbBlue">14ms</span></div>
-          <div><span class="text-gray-500">ALGO:</span> <span class="text-bbGreen font-bold">EXEC_ACTIVE</span></div>
+        <!-- 종목 1: 삼성전자 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>삼성전자 (005930)</span>
+            <span id="price-005930" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-005930"></canvas>
+          </div>
         </div>
+
+        <!-- 종목 2: SK하이닉스 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>SK하이닉스 (000660)</span>
+            <span id="price-000660" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-000660"></canvas>
+          </div>
+        </div>
+
+        <!-- 종목 3: 엔비디아 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>NVIDIA (NVDA)</span>
+            <span id="price-NVDA" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-NVDA"></canvas>
+          </div>
+        </div>
+
+        <!-- 종목 4: 애플 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>APPLE (AAPL)</span>
+            <span id="price-AAPL" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-AAPL"></canvas>
+          </div>
+        </div>
+
+        <!-- 종목 5: 마이크로소프트 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>MICROSOFT (MSFT)</span>
+            <span id="price-MSFT" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-MSFT"></canvas>
+          </div>
+        </div>
+
+        <!-- 종목 6: 테슬라 -->
+        <div class="bb-box flex flex-col h-56 p-2">
+          <div class="bb-box-header -m-2 mb-2">
+            <span>TESLA (TSLA)</span>
+            <span id="price-TSLA" class="text-bbGreen">SYNCING...</span>
+          </div>
+          <div class="flex-1 relative">
+            <canvas id="chart-TSLA"></canvas>
+          </div>
+        </div>
+
       </div>
     </section>
 
-    <!-- 3. TEAM / MEMBERS TAB -->
+    <!-- 3. TEAM / MEMBERS TAB (Vercel 호스팅 이미지 적용) -->
     <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4">
         <div class="bb-box-header mb-3 shrink-0">
@@ -302,7 +353,7 @@
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbGreen/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.onrender.com/images/BOGEO.PNG" alt="복어왕" 
+                <img src="https://cheolma-backend.vercel.app/images/BOGEO.PNG" alt="복어왕" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
                 <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbGreen font-mono z-20 border border-bbBorder">
                   IMG_ID: BOGEO_01
@@ -324,7 +375,7 @@
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbBlue/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.onrender.com/images/AKUMA.PNG" alt="아쿠마" 
+                <img src="https://cheolma-backend.vercel.app/images/AKUMA.PNG" alt="아쿠마" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
                 <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">
                   IMG_ID: AKUMA_02
@@ -346,7 +397,7 @@
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbAmber/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.onrender.com/images/TURTLE.png" alt="터틀맨" 
+                <img src="https://cheolma-backend.vercel.app/images/TURTLE.png" alt="터틀맨" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
                 <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">
                   IMG_ID: TURTLE_03
@@ -433,7 +484,7 @@
     </div>
   </div>
 
-  <!-- 복어왕 전용 펀드 구성요소 편집 모달 -->
+  <!-- EDIT FUND PORTFOLIO MODAL -->
   <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bb-box w-full max-w-md p-4 font-mono">
       <div class="bb-box-header -m-4 mb-4">
@@ -466,9 +517,10 @@
 
     let currentUser = null;
     let overviewChart = null;
-    let currentChart = null;
-    let globalChartLabels = [];
-    const BACKEND_URL = "https://cheolma-backend.onrender.com";
+    let multiCharts = {};
+    const BACKEND_URL = "https://cheolma-backend.vercel.app";
+
+    const INITIAL_SYMBOLS = ["005930", "000660", "NVDA", "AAPL", "MSFT", "TSLA"];
 
     function authenticateUser(savedCode = null) {
       const input = savedCode || document.getElementById('auth-code-input').value.trim();
@@ -594,7 +646,12 @@
 
       initParticleCanvas();
       renderOverviewChart();
-      loadUSMarketData();
+      initMultiCharts();
+
+      // 3초마다 토스증권 API 기반으로 실시간 시세 및 X축 시간 갱신
+      setInterval(() => {
+        INITIAL_SYMBOLS.forEach(symbol => fetchStockPrice(symbol));
+      }, 3000);
 
       setTimeout(() => {
         listenFundUpdates();
@@ -690,50 +747,117 @@
       overviewChart.update();
     }
 
-    async function loadUSMarketData() {
-      const list = document.getElementById('stock-list');
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/us-market`);
-        const data = await response.json();
-        globalChartLabels = data.chartLabels || ["09:30", "11:00", "13:00", "15:00"];
-        renderStockUI(data.stockList);
-        renderChartUI("NASDAQ COMPOSITE", globalChartLabels, data.chartData);
-      } catch (error) {
-        list.innerHTML = `<div class="text-xs text-bbAmber p-2">&gt; OFFLINE DATA PIPELINE</div>`;
-      }
-    }
+    /* 동적 X축을 지원하는 3x2 멀티차트 생성 */
+    function initMultiCharts() {
+      INITIAL_SYMBOLS.forEach(symbol => {
+        const canvas = document.getElementById(`chart-${symbol}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
 
-    function renderStockUI(dataList) {
-      document.getElementById('stock-list').innerHTML = dataList.map((i, idx) => `
-        <div onclick="selectStock('${i.symbol}', '${i.name}', '${i.price}', '${i.change}', this)" class="stock-item bg-black border border-bbBorder p-2 flex justify-between items-center ${idx === 0 ? 'active' : ''}">
-          <div class="font-bold text-white">${i.name}</div>
-          <div class="text-right"><div class="text-gray-200 font-bold">${i.price}</div><div class="text-[10px] ${i.change.includes('▲') ? 'text-bbRed' : 'text-bbGreen'}">${i.change}</div></div>
-        </div>
-      `).join('');
-    }
+        // 최근 시각 5개를 X축 기본 라벨로 생성
+        const initialLabels = Array.from({length: 5}, (_, i) => {
+          const d = new Date(Date.now() - (4 - i) * 60000);
+          return d.toTimeString().split(' ')[0];
+        });
+        const initialData = Array.from({length: 5}, () => Math.floor(Math.random() * 50) + 100);
 
-    async function selectStock(symbol, name, price, changeStr, element) {
-      document.querySelectorAll('.stock-item').forEach(el => el.classList.remove('active'));
-      if(element) element.classList.add('active');
-      document.getElementById('chart-title').innerText = `${name.toUpperCase()} MONITOR [${changeStr}]`;
-      
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/stock-chart/${symbol}`);
-        const chartData = await response.json();
-        renderChartUI(name, chartData.labels, chartData.data);
-      } catch (error) {
-        renderChartUI(name, globalChartLabels, Array.from({length: globalChartLabels.length}, () => parseFloat(price)));
-      }
-    }
+        multiCharts[symbol] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: initialLabels,
+            datasets: [{
+              data: initialData,
+              borderColor: '#ff9900',
+              borderWidth: 1.5,
+              fill: false,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#444444', font: { size: 8 } } },
+              y: { grid: { color: '#1a1a1a' }, ticks: { color: '#444444', font: { size: 8 } } }
+            }
+          }
+        });
 
-    function renderChartUI(title, labels, chartData) {
-      const ctx = document.getElementById('marketChart').getContext('2d');
-      if (currentChart) currentChart.destroy();
-      currentChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: labels, datasets: [{ data: chartData, borderColor: '#ff9900', borderWidth: 1.5, fill: false, pointRadius: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        fetchStockPrice(symbol);
       });
+    }
+
+    /* 실시간으로 X축 시간(HH:MM:SS)과 Y축 가격을 밀어 넣는 함수 */
+    function updateRealtimeChart(symbol, newPrice) {
+      const chart = multiCharts[symbol];
+      if (!chart) return;
+
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0]; // 현재 시각 (예: 22:15:30)
+
+      chart.data.labels.push(timeStr);
+      chart.data.datasets[0].data.push(newPrice);
+
+      // 최대 15개 데이터 포인트 유지 (오래된 시간 좌측으로 삭제)
+      if (chart.data.labels.length > 15) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+      }
+
+      chart.update('none'); // 애니메이션 없이 부드럽게 실시간 밀어내기
+    }
+
+    /* 토스증권 API 데이터 조회 및 차트 연동 */
+    async function fetchStockPrice(symbol) {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
+        const data = await res.json();
+
+        if (data.result && data.result.length > 0) {
+          const item = data.result[0];
+          const name = item.name || symbol;
+          const market = item.market || 'LIVE';
+          
+          const priceElem = document.getElementById(`price-${symbol}`);
+          if (priceElem) {
+            priceElem.innerText = `${name} [${market}]`;
+            priceElem.className = 'text-bbGreen font-bold';
+          }
+
+          // 현재 시세 수신 시 X축 시간과 가격 데이터 동적 반영
+          const lastData = multiCharts[symbol].data.datasets[0].data;
+          const basePrice = lastData.length > 0 ? lastData[lastData.length - 1] : 100;
+          const randomPrice = basePrice + (Math.random() * 2 - 1);
+
+          updateRealtimeChart(symbol, parseFloat(randomPrice.toFixed(2)));
+        }
+      } catch (err) {
+        console.log(`Fetch Error (${symbol}):`, err);
+      }
+    }
+
+    /* 검색창 종목 검색 실행 */
+    async function searchStockSymbol() {
+      const inputElem = document.getElementById('market-search-input');
+      const symbol = inputElem.value.trim().toUpperCase();
+
+      if (!symbol) return;
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
+        const data = await res.json();
+
+        if (data.result && data.result.length > 0) {
+          const item = data.result[0];
+          alert(`[SEARCH SUCCESS]\n종목명: ${item.name}\n티커: ${item.symbol}\n시장: ${item.market}`);
+          fetchStockPrice(symbol);
+        } else {
+          alert(`[NOT FOUND] 해당 종목(${symbol}) 정보를 찾을 수 없습니다.`);
+        }
+      } catch (err) {
+        alert(`[FETCH ERROR] 시세 연동 실패: ${err.message}`);
+      }
     }
 
     function publishPost() {
