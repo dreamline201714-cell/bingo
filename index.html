@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CHEOLMA STREET v4.0.2</title>
 
-  <!-- Google Fonts & Tailwind CSS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,700;1,400&family=Noto+Sans+KR:wght@300;500;700&display=swap" rel="stylesheet">
@@ -44,9 +43,6 @@
     .scanline { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; opacity: 0.4; }
     .tab-content { display: none; }
     .tab-content.active { display: flex; }
-    .stock-item { cursor: pointer; transition: all 0.15s ease; }
-    .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
-    .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
 
     .nav-btn {
       background-color: #121212;
@@ -56,18 +52,8 @@
       white-space: nowrap;
       min-width: 80px;
     }
-    .nav-btn:hover {
-      border-color: #ff9900;
-      color: #ff9900;
-      background-color: #1a1a1a;
-    }
-    .nav-btn.active {
-      background-color: #261d0f;
-      border-color: #ff9900;
-      color: #ff9900;
-      font-weight: bold;
-      box-shadow: inset 0 -2px 0 #ff9900;
-    }
+    .nav-btn:hover { border-color: #ff9900; color: #ff9900; background-color: #1a1a1a; }
+    .nav-btn.active { background-color: #261d0f; border-color: #ff9900; color: #ff9900; font-weight: bold; box-shadow: inset 0 -2px 0 #ff9900; }
   </style>
 
   <!-- Firebase SDK -->
@@ -177,7 +163,6 @@
     <!-- 1. OVERVIEW TAB -->
     <section id="tab-overview" class="tab-content active h-full flex-col overflow-y-auto">
       <div class="w-full max-w-7xl mx-auto flex flex-col gap-3 p-1">
-        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0">
           <div class="lg:col-span-2 bb-box p-3 flex flex-col justify-between">
             <div class="bb-box-header -m-3 mb-2">
@@ -228,545 +213,163 @@
             </div>
           </div>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0">
-          <div class="lg:col-span-2 bb-box p-3 flex flex-col justify-between">
-            <div class="bb-box-header -m-3 mb-3">
-              <span>LATEST_EXECUTIVE_BRIEFING</span>
-              <span class="text-bbAmber text-[9px]">LIVE_FEED</span>
-            </div>
-            <div id="latest-briefing-card" class="p-3 bg-black border border-bbBorder rounded space-y-2">
-              <div class="text-gray-500 text-xs font-mono py-4 text-center">&gt; NO BRIEFING POSTED YET. WRITE A COLUMN IN F4 TAB.</div>
-            </div>
-          </div>
-
-          <div class="bb-box p-3 flex flex-col justify-between">
-            <div class="bb-box-header -m-3 mb-2">
-              <span>ALGO_EXECUTION_LOGS</span>
-              <span class="text-bbGreen text-[9px]">SYSTEM_LIVE</span>
-            </div>
-            <div id="fund-log-stream" class="bg-black border border-bbBorder p-2 text-[10px] font-mono text-gray-300 space-y-1.5 h-28 overflow-y-auto">
-              <div class="text-gray-600">&gt; NO LOGS RECORDED YET.</div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </section>
 
-    <!-- 2. MARKET & US STOCKS TAB (검색바 & 3x2 동적 X축 실시간 차트) -->
+    <!-- 2. MARKET TAB (토스증권 API 기능 전체 통합 컨트롤) -->
     <section id="tab-market" class="tab-content h-full flex-col gap-2">
-      <!-- 상단 시세 검색바 -->
-      <div class="bb-box p-2 flex items-center gap-2 font-mono">
-        <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
-        <input type="text" id="market-search-input" placeholder="종목코드/티커 입력 (예: 005930, AAPL, NVDA)..." 
-               class="flex-1 bg-black border border-bbBorder px-3 py-1.5 text-xs text-bbGreen outline-none focus:border-bbAmber"
-               onkeypress="if(event.key==='Enter') searchStockSymbol()">
-        <button onclick="searchStockSymbol()" class="bg-bbAmber text-black font-bold text-xs px-4 py-1.5 hover:bg-yellow-400">
-          FETCH REALTIME
-        </button>
+      <!-- 토스증권 명세서 전용 기능 컨트롤 파이프라인 -->
+      <div class="bb-box p-2 flex flex-wrap items-center justify-between gap-2 font-mono">
+        <div class="flex items-center gap-2 flex-1 min-w-[280px]">
+          <span class="text-bbAmber font-bold text-xs shrink-0">[SEARCH SYMBOL]</span>
+          <input type="text" id="market-search-input" placeholder="종목코드/명 (예: 005930, 삼성전자, NVDA)..." 
+                 class="flex-1 bg-black border border-bbBorder px-3 py-1 text-xs text-bbGreen outline-none focus:border-bbAmber"
+                 onkeypress="if(event.key==='Enter') searchStockSymbol()">
+          <button onclick="searchStockSymbol()" class="bg-bbAmber text-black font-bold text-xs px-3 py-1 hover:bg-yellow-400">
+            INFO
+          </button>
+        </div>
+
+        <!-- 캡쳐 명세서의 부가 기능 API 단축 버튼들 -->
+        <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+          <button onclick="fetchOrderbook()" class="bg-bbPanel border border-bbBorder text-bbBlue px-2 py-1 hover:border-bbBlue">
+            호가(Orderbook)
+          </button>
+          <button onclick="fetchInvestorTrading()" class="bg-bbPanel border border-bbBorder text-bbGreen px-2 py-1 hover:border-bbGreen">
+            매매동향(Trading)
+          </button>
+          <button onclick="fetchExchangeRate()" class="bg-bbPanel border border-bbBorder text-bbAmber px-2 py-1 hover:border-bbAmber">
+            환율(KRW/USD)
+          </button>
+          <button onclick="fetchRankings()" class="bg-bbPanel border border-bbBorder text-white px-2 py-1 hover:border-white">
+            랭킹(Rankings)
+          </button>
+        </div>
       </div>
 
-      <!-- 3칸 2줄 (3x2) 차트 그리드 영역 -->
+      <!-- 3x2 차트 영역 -->
       <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto">
-        
-        <!-- 종목 1: 삼성전자 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>삼성전자 (005930)</span>
-            <span id="price-005930" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-005930"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>삼성전자 (005930)</span><span id="price-005930" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-005930"></canvas></div>
         </div>
-
-        <!-- 종목 2: SK하이닉스 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>SK하이닉스 (000660)</span>
-            <span id="price-000660" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-000660"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>SK하이닉스 (000660)</span><span id="price-000660" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-000660"></canvas></div>
         </div>
-
-        <!-- 종목 3: 엔비디아 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>NVIDIA (NVDA)</span>
-            <span id="price-NVDA" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-NVDA"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>NVIDIA (NVDA)</span><span id="price-NVDA" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-NVDA"></canvas></div>
         </div>
-
-        <!-- 종목 4: 애플 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>APPLE (AAPL)</span>
-            <span id="price-AAPL" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-AAPL"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>APPLE (AAPL)</span><span id="price-AAPL" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-AAPL"></canvas></div>
         </div>
-
-        <!-- 종목 5: 마이크로소프트 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>MICROSOFT (MSFT)</span>
-            <span id="price-MSFT" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-MSFT"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>MICROSOFT (MSFT)</span><span id="price-MSFT" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-MSFT"></canvas></div>
         </div>
-
-        <!-- 종목 6: 테슬라 -->
         <div class="bb-box flex flex-col h-56 p-2">
-          <div class="bb-box-header -m-2 mb-2">
-            <span>TESLA (TSLA)</span>
-            <span id="price-TSLA" class="text-bbGreen">SYNCING...</span>
-          </div>
-          <div class="flex-1 relative">
-            <canvas id="chart-TSLA"></canvas>
-          </div>
+          <div class="bb-box-header -m-2 mb-2"><span>TESLA (TSLA)</span><span id="price-TSLA" class="text-bbGreen">FETCHING...</span></div>
+          <div class="flex-1 relative"><canvas id="chart-TSLA"></canvas></div>
         </div>
-
       </div>
     </section>
 
-    <!-- 3. TEAM / MEMBERS TAB (Vercel 호스팅 이미지 적용) -->
+    <!-- 3. TEAM TAB -->
     <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4">
-        <div class="bb-box-header mb-3 shrink-0">
-          <span>OPERATIONAL_CORE // LEADERSHIP_PROFILES</span>
-          <span>SYS_VER: 4.0</span>
-        </div>
-        
+        <div class="bb-box-header mb-3 shrink-0"><span>OPERATIONAL_CORE // LEADERSHIP_PROFILES</span><span>SYS_VER: 4.0</span></div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto w-full py-2">
-          <!-- MEMBER 01: 복어왕 -->
-          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
-            <div>
-              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
-                <div class="absolute inset-0 bg-bbGreen/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.vercel.app/images/BOGEO.PNG" alt="복어왕" 
-                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbGreen font-mono z-20 border border-bbBorder">
-                  IMG_ID: BOGEO_01
-                </div>
-              </div>
-
-              <div class="text-bbAmber font-bold text-base mb-1">[USER_01] 복어왕</div>
-              <div class="text-xs text-bbGreen mb-2">&gt; ROLE: CHIEF EXEC / STRATEGIST</div>
-              <p class="text-xs text-gray-400 leading-relaxed font-sans">철마스트리트 총괄 리더십. 펀드 포트폴리오 제어 및 매크로 지표 제어 권한 보유.</p>
-            </div>
-            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
-              <span>STATUS: ONLINE</span>
-              <span class="text-bbAmber">CLEARANCE: L5</span>
-            </div>
+          <div class="bb-box p-4 flex flex-col justify-between">
+            <img src="https://cheolma-backend.vercel.app/images/BOGEO.PNG" alt="복어왕" class="w-full aspect-square object-cover mb-3">
+            <div class="text-bbAmber font-bold">[USER_01] 복어왕</div>
           </div>
-
-          <!-- MEMBER 02: 아쿠마 -->
-          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
-            <div>
-              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
-                <div class="absolute inset-0 bg-bbBlue/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.vercel.app/images/AKUMA.PNG" alt="아쿠마" 
-                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">
-                  IMG_ID: AKUMA_02
-                </div>
-              </div>
-
-              <div class="text-bbAmber font-bold text-base mb-1">[USER_02] 아쿠마</div>
-              <div class="text-xs text-bbBlue mb-2">&gt; ROLE: QUANT ALGO ENGINEER</div>
-              <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩(HFT) 파이프라인 수식 알고리즘 모듈 구축.</p>
-            </div>
-            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
-              <span>STATUS: PROCESSING</span>
-              <span class="text-bbBlue">CLEARANCE: L4</span>
-            </div>
+          <div class="bb-box p-4 flex flex-col justify-between">
+            <img src="https://cheolma-backend.vercel.app/images/AKUMA.PNG" alt="아쿠마" class="w-full aspect-square object-cover mb-3">
+            <div class="text-bbAmber font-bold">[USER_02] 아쿠마</div>
           </div>
-
-          <!-- MEMBER 03: 터틀맨 -->
-          <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
-            <div>
-              <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
-                <div class="absolute inset-0 bg-bbAmber/10 z-10 pointer-events-none"></div>
-                <img src="https://cheolma-backend.vercel.app/images/TURTLE.png" alt="터틀맨" 
-                     class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">
-                  IMG_ID: TURTLE_03
-                </div>
-              </div>
-
-              <div class="text-bbAmber font-bold text-base mb-1">[USER_03] 터틀맨</div>
-              <div class="text-xs text-bbAmber mb-2">&gt; ROLE: INFRA & DATA PIPELINE</div>
-              <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 데이터 수집 크롤러 모듈 및 커뮤니티 노드 관리.</p>
-            </div>
-            <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
-              <span>STATUS: STANDBY</span>
-              <span class="text-bbAmber">CLEARANCE: L4</span>
-            </div>
+          <div class="bb-box p-4 flex flex-col justify-between">
+            <img src="https://cheolma-backend.vercel.app/images/TURTLE.png" alt="터틀맨" class="w-full aspect-square object-cover mb-3">
+            <div class="text-bbAmber font-bold">[USER_03] 터틀맨</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 4. INSIGHT COLUMN TAB -->
+    <!-- 4. COLUMN TAB -->
     <section id="tab-column" class="tab-content h-full flex-col">
       <div class="bb-box h-full flex flex-col p-3 lg:p-4 overflow-y-auto">
-        <div class="bb-box-header mb-3 shrink-0">
-          <span>INVESTMENT_RESEARCH_COLUMN</span>
-          <button onclick="openPostModal()" class="bg-bbAmber text-black text-[10px] font-bold px-2 py-0.5 hover:bg-yellow-400">+ NEW_POST</button>
-        </div>
-        <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 lg:gap-3"></div>
+        <div class="bb-box-header mb-3 shrink-0"><span>INVESTMENT_RESEARCH_COLUMN</span></div>
+        <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       </div>
     </section>
 
-    <!-- 5. IRC COMMUNITY CHAT TAB -->
+    <!-- 5. CHAT TAB -->
     <section id="tab-chat" class="tab-content h-full flex-col">
       <div class="bb-box h-full flex flex-col">
-        <div class="bb-box-header">
-          <span>IRC_CHAT // #CHEOLMA_REALTIME</span>
-          <span class="text-bbGreen font-normal">SSL</span>
-        </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-2 space-y-1 text-xs font-mono bg-black">
-          <div class="text-gray-600 text-[10px] border-b border-bbBorder pb-1">&gt; CONNECTED TO NETWORK SERVER NODE</div>
-        </div>
-        <div class="bg-bbPanel p-2 border-t border-bbBorder flex items-center space-x-2">
-          <span class="text-bbAmber text-xs font-bold">&gt;_</span>
-          <input type="text" id="chat-id" placeholder="ID" readonly class="w-20 bg-black/50 border border-bbBorder px-1.5 py-1 text-xs text-bbAmber outline-none font-bold">
-          <input type="text" id="chat-txt" placeholder="Input message..." class="flex-1 bg-black border border-bbBorder px-2 py-1 text-xs text-bbGreen outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
-          <button onclick="pushMessageToCloud()" class="bg-bbAmber text-black font-bold text-xs px-3 py-1">SEND</button>
-        </div>
+        <div class="bb-box-header"><span>IRC_CHAT // #CHEOLMA_REALTIME</span></div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-2 space-y-1 text-xs font-mono bg-black"></div>
       </div>
     </section>
   </main>
 
-  <!-- WRITE COLUMN MODAL -->
-  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bb-box w-full max-w-xl p-4 font-mono">
-      <div class="bb-box-header -m-4 mb-4">
-        <span>WRITE_RESEARCH_POST</span>
-        <button onclick="closePostModal()" class="text-bbRed font-bold">X</button>
-      </div>
-
-      <div class="space-y-3">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[10px] text-gray-500 block mb-1">CATEGORY</label>
-            <input type="text" id="post-category" placeholder="QUANT / MACRO" class="w-full bg-black border border-bbBorder p-2 text-xs text-bbAmber outline-none">
-          </div>
-          <div>
-            <label class="text-[10px] text-gray-500 block mb-1">AUTHOR</label>
-            <input type="text" id="post-author" readonly class="w-full bg-black/50 border border-bbBorder p-2 text-xs text-bbAmber outline-none cursor-not-allowed font-bold">
-          </div>
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-500 block mb-1">TITLE</label>
-          <input type="text" id="post-title" placeholder="ENTER SUBJECT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-white outline-none">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-500 block mb-1">CONTENT</label>
-          <textarea id="post-content" rows="6" placeholder="WRITE DETAILED REPORT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-gray-300 outline-none resize-none font-sans"></textarea>
-        </div>
-      </div>
-
-      <div class="flex justify-end space-x-2 mt-4">
-        <button onclick="closePostModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
-        <button onclick="publishPost()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">PUBLISH</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- EDIT FUND PORTFOLIO MODAL -->
-  <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bb-box w-full max-w-md p-4 font-mono">
-      <div class="bb-box-header -m-4 mb-4">
-        <span>EDIT_CHEOLMA_FUND_PORTFOLIO</span>
-        <button onclick="closeFundModal()" class="text-bbRed font-bold">X</button>
-      </div>
-      <div class="space-y-3">
-        <p class="text-[10px] text-gray-400">&gt; 각 종목의 구성 비중(%)을 설정하세요.</p>
-        <div class="space-y-2">
-          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">NVDA:</span><input type="number" id="weight-nvda" value="40" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
-          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">BTC:</span><input type="number" id="weight-btc" value="30" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
-          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">AAPL:</span><input type="number" id="weight-aapl" value="20" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
-          <div class="flex items-center justify-between"><span class="text-xs text-bbAmber font-bold">CASH:</span><input type="number" id="weight-cash" value="10" class="w-20 bg-black border border-bbBorder p-1 text-xs text-right text-white"> %</div>
-        </div>
-      </div>
-      <div class="flex justify-end space-x-2 mt-6">
-        <button onclick="closeFundModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
-        <button onclick="updateFundPortfolio()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">APPLY</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SCRIPT CONTROLLER -->
   <script>
     const AUTH_CODES = {
-      "BOGEO-0624": { name: "복어왕", role: "ADMIN", level: "L5" },
-      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR", level: "L4" },
-      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR", level: "L4" }
+      "BOGEO-0624": { name: "복어왕", role: "ADMIN" },
+      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR" },
+      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR" }
     };
 
     let currentUser = null;
-    let overviewChart = null;
     let multiCharts = {};
     const BACKEND_URL = "https://cheolma-backend.vercel.app";
-
     const INITIAL_SYMBOLS = ["005930", "000660", "NVDA", "AAPL", "MSFT", "TSLA"];
 
     function authenticateUser(savedCode = null) {
       const input = savedCode || document.getElementById('auth-code-input').value.trim();
-      
       if (AUTH_CODES[input]) {
         currentUser = AUTH_CODES[input];
         localStorage.setItem("cheolma_auth_code", input);
-        
-        document.getElementById('user-badge').innerText = `[${currentUser.name}]`;
-        document.getElementById('chat-id').value = currentUser.name;
-        document.getElementById('post-author').value = currentUser.name;
-        
-        if (currentUser.role === "ADMIN") {
-          document.getElementById('admin-fund-btn').classList.remove('hidden');
-        } else {
-          document.getElementById('admin-fund-btn').classList.add('hidden');
-        }
-
-        const intro = document.getElementById('intro-screen');
-        intro.style.transition = 'opacity 0.5s ease';
-        intro.style.opacity = '0';
-        setTimeout(() => intro.style.display = 'none', 500);
-      } else {
-        if (!savedCode) {
-          document.getElementById('auth-error').classList.remove('hidden');
-        }
-      }
-    }
-
-    function logoutUser() {
-      localStorage.removeItem("cheolma_auth_code");
-      location.reload();
-    }
-
-    function openPostModal() {
-      document.getElementById('post-author').value = currentUser ? currentUser.name : "GUEST";
-      document.getElementById('post-modal').classList.remove('hidden');
-    }
-    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
-
-    function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
-    function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
-
-    function updateFundPortfolio() {
-      if (!window.dbSet || !window.fundRef || !window.dbPush || !window.logsRef) return;
-
-      const nvda = parseFloat(document.getElementById('weight-nvda').value) || 0;
-      const btc = parseFloat(document.getElementById('weight-btc').value) || 0;
-      const aapl = parseFloat(document.getElementById('weight-aapl').value) || 0;
-      const cash = parseFloat(document.getElementById('weight-cash').value) || 0;
-      const updater = currentUser ? currentUser.name : "ADMIN";
-      const nowTime = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-
-      window.dbSet(window.fundRef, {
-        nvda: nvda, btc: btc, aapl: aapl, cash: cash,
-        updatedBy: updater,
-        timestamp: new Date().toISOString()
-      });
-
-      window.dbPush(window.logsRef, {
-        logText: `REBALANCED: NVDA ${nvda}%, BTC ${btc}%, AAPL ${aapl}%, CASH ${cash}%`,
-        author: updater,
-        time: nowTime
-      });
-
-      closeFundModal();
-    }
-
-    function listenFundUpdates() {
-      if (window.onValue && window.fundRef) {
-        window.onValue(window.fundRef, (snapshot) => {
-          const data = snapshot.val();
-          if (data) {
-            const baseValue = 1000000;
-            const simulatedGain = (data.nvda * 0.024) + (data.btc * 0.018) + (data.aapl * -0.008);
-            const totalNav = baseValue * (1 + (simulatedGain / 100));
-            
-            const navStr = `$${Math.round(totalNav).toLocaleString()}`;
-            const ratioStr = `${simulatedGain >= 0 ? '+' : ''}${simulatedGain.toFixed(2)}%`;
-            
-            document.getElementById('fund-nav-text').innerText = navStr;
-            document.getElementById('fund-ratio-text').innerText = ratioStr;
-            document.getElementById('fund-ratio-text').className = simulatedGain >= 0 ? 'text-bbGreen' : 'text-bbRed';
-
-            document.getElementById('overview-nav').innerText = navStr;
-            document.getElementById('overview-ratio').innerText = ratioStr;
-            document.getElementById('overview-ratio').className = simulatedGain >= 0 ? 'text-base font-bold text-bbGreen font-mono' : 'text-base font-bold text-bbRed font-mono';
-
-            document.getElementById('bar-nvda').style.width = `${data.nvda}%`;
-            document.getElementById('bar-nvda-text').innerText = `${data.nvda}%`;
-            document.getElementById('bar-btc').style.width = `${data.btc}%`;
-            document.getElementById('bar-btc-text').innerText = `${data.btc}%`;
-            document.getElementById('bar-aapl').style.width = `${data.aapl}%`;
-            document.getElementById('bar-aapl-text').innerText = `${data.aapl}%`;
-            document.getElementById('bar-cash').style.width = `${data.cash}%`;
-            document.getElementById('bar-cash-text').innerText = `${data.cash}%`;
-            document.getElementById('fund-updated-by').innerText = data.updatedBy || 'ADMIN';
-
-            updateOverviewChart(totalNav);
-          }
-        });
+        document.getElementById('intro-screen').style.display = 'none';
       }
     }
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
-      
       document.getElementById(`tab-${tabId}`).classList.add('active');
       document.getElementById(`nav-${tabId}`).classList.add('active');
     }
 
-    function updateClock() {
-      document.getElementById('sys-clock').innerText = new Date().toUTCString().split(' ')[4] + " UTC";
-    }
-    setInterval(updateClock, 1000);
-
     document.addEventListener("DOMContentLoaded", () => {
       const savedCode = localStorage.getItem("cheolma_auth_code");
-      if (savedCode) {
-        authenticateUser(savedCode);
-      }
-
-      initParticleCanvas();
-      renderOverviewChart();
+      if (savedCode) authenticateUser(savedCode);
       initMultiCharts();
 
-      // 3초마다 토스증권 API 기반으로 실시간 시세 및 X축 시간 갱신
+      // 3초 마다 실시간 토스 시세 폴링
       setInterval(() => {
         INITIAL_SYMBOLS.forEach(symbol => fetchStockPrice(symbol));
       }, 3000);
-
-      setTimeout(() => {
-        listenFundUpdates();
-        
-        if(window.onChildAdded && window.chatRef) {
-          window.onChildAdded(window.chatRef, (data) => {
-            const msgObj = data.val();
-            displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
-          });
-        }
-        
-        if(window.onChildAdded && window.postRef) {
-          window.onChildAdded(window.postRef, (data) => {
-            const p = data.val();
-            displayPostCard(p.category, p.author, p.title, p.content, p.date);
-            updateMainOverviewBriefing(p.category, p.author, p.title, p.content, p.date);
-          });
-        }
-
-        if(window.onChildAdded && window.logsRef) {
-          const logStream = document.getElementById('fund-log-stream');
-          let isFirstLog = true;
-          window.onChildAdded(window.logsRef, (data) => {
-            if (isFirstLog) { logStream.innerHTML = ''; isFirstLog = false; }
-            const l = data.val();
-            logStream.insertAdjacentHTML('afterbegin', `<div><span class="text-gray-500">[${l.time}]</span> <span class="text-bbGreen">EXEC:</span> ${l.logText} <span class="text-gray-500">BY ${l.author}</span></div>`);
-          });
-        }
-      }, 1200);
     });
 
-    function initParticleCanvas() {
-      const canvas = document.getElementById('intro-canvas');
-      const ctx = canvas.getContext('2d');
-      let width = canvas.width = window.innerWidth;
-      let height = canvas.height = window.innerHeight;
-
-      window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; });
-
-      const particles = Array.from({length: 40}, () => ({
-        x: Math.random() * width, y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 1.5, vy: (Math.random() - 0.5) * 1.5, size: Math.random() * 2 + 1
-      }));
-
-      function animate() {
-        ctx.clearRect(0, 0, width, height);
-        particles.forEach(p => {
-          p.x += p.vx; p.y += p.vy;
-          if (p.x < 0 || p.x > width) p.vx *= -1;
-          if (p.y < 0 || p.y > height) p.vy *= -1;
-          ctx.fillStyle = '#ff9900'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-        });
-        requestAnimationFrame(animate);
-      }
-      animate();
-    }
-
-    function renderOverviewChart() {
-      const ctx = document.getElementById('overviewChart').getContext('2d');
-      overviewChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['INIT', 'STEP 1', 'STEP 2', 'STEP 3', 'STEP 4', 'CURRENT'],
-          datasets: [{
-            label: 'NAV ($)',
-            data: [1000000, 1000000, 1000000, 1000000, 1000000, 1000000],
-            borderColor: '#00ff66',
-            backgroundColor: 'rgba(0, 255, 102, 0.05)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 2,
-            pointBackgroundColor: '#00ff66'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { color: '#222222' }, ticks: { color: '#666666', font: { size: 9 } } },
-            y: { grid: { color: '#222222' }, ticks: { color: '#666666', font: { size: 9 } } }
-          }
-        }
-      });
-    }
-
-    function updateOverviewChart(newNav) {
-      if (!overviewChart) return;
-      const data = overviewChart.data.datasets[0].data;
-      data.shift();
-      data.push(Math.round(newNav));
-      overviewChart.update();
-    }
-
-    /* 동적 X축을 지원하는 3x2 멀티차트 생성 */
     function initMultiCharts() {
       INITIAL_SYMBOLS.forEach(symbol => {
         const canvas = document.getElementById(`chart-${symbol}`);
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // 최근 시각 5개를 X축 기본 라벨로 생성
         const initialLabels = Array.from({length: 5}, (_, i) => {
           const d = new Date(Date.now() - (4 - i) * 60000);
           return d.toTimeString().split(' ')[0];
         });
-        const initialData = Array.from({length: 5}, () => Math.floor(Math.random() * 50) + 100);
 
         multiCharts[symbol] = new Chart(ctx, {
           type: 'line',
           data: {
             labels: initialLabels,
             datasets: [{
-              data: initialData,
+              data: [100, 101, 100.5, 102, 101.5],
               borderColor: '#ff9900',
               borderWidth: 1.5,
               fill: false,
@@ -783,151 +386,105 @@
             }
           }
         });
-
         fetchStockPrice(symbol);
       });
     }
 
-    /* 실시간으로 X축 시간(HH:MM:SS)과 Y축 가격을 밀어 넣는 함수 */
     function updateRealtimeChart(symbol, newPrice) {
       const chart = multiCharts[symbol];
       if (!chart) return;
 
       const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0]; // 현재 시각 (예: 22:15:30)
+      const timeStr = now.toTimeString().split(' ')[0];
 
       chart.data.labels.push(timeStr);
       chart.data.datasets[0].data.push(newPrice);
 
-      // 최대 15개 데이터 포인트 유지 (오래된 시간 좌측으로 삭제)
       if (chart.data.labels.length > 15) {
         chart.data.labels.shift();
         chart.data.datasets[0].data.shift();
       }
-
-      chart.update('none'); // 애니메이션 없이 부드럽게 실시간 밀어내기
+      chart.update('none');
     }
 
-    /* 토스증권 API 데이터 조회 및 차트 연동 */
+    /* 1. 현재가 API (/api/v1/prices) 연동 */
     async function fetchStockPrice(symbol) {
-	  try {
-		const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
-		const data = await res.json();
-
-		let stockName = symbol;
-		let marketStatus = 'ONLINE';
-
-		if (data.result && data.result.length > 0) {
-		  const item = data.result[0];
-		  stockName = item.name || item.englishName || symbol;
-		  marketStatus = item.market || 'ACTIVE';
-		}
-
-		// 화면 텍스트 즉시 업데이트
-		const priceElem = document.getElementById(`price-${symbol}`);
-		if (priceElem) {
-		  priceElem.innerText = `${stockName} [${marketStatus}]`;
-		  priceElem.className = 'text-bbGreen font-bold';
-		}
-
-		// 동적 X축 시간 및 차트 수치 갱신
-		const lastData = multiCharts[symbol].data.datasets[0].data;
-		const basePrice = lastData.length > 0 ? lastData[lastData.length - 1] : 100;
-		const randomPrice = basePrice + (Math.random() * 2 - 1);
-
-		updateRealtimeChart(symbol, parseFloat(randomPrice.toFixed(2)));
-
-	  } catch (err) {
-		console.log(`Fetch Error (${symbol}):`, err);
-	  }
-	}
-
-    /* 검색창 종목 검색 실행 */
-    async function searchStockSymbol() {
-      const inputElem = document.getElementById('market-search-input');
-      const symbol = inputElem.value.trim().toUpperCase();
-
-      if (!symbol) return;
-
       try {
-        const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
+        const res = await fetch(`${BACKEND_URL}/api/toss/prices/${symbol}`);
         const data = await res.json();
 
         if (data.result && data.result.length > 0) {
           const item = data.result[0];
-          alert(`[SEARCH SUCCESS]\n종목명: ${item.name}\n티커: ${item.symbol}\n시장: ${item.market}`);
-          fetchStockPrice(symbol);
-        } else {
-          alert(`[NOT FOUND] 해당 종목(${symbol}) 정보를 찾을 수 없습니다.`);
+          const price = item.close || item.price || item.currentPrice || 0;
+          
+          const priceElem = document.getElementById(`price-${symbol}`);
+          if (priceElem) {
+            priceElem.innerText = `${price.toLocaleString()} KRW`;
+            priceElem.className = 'text-bbGreen font-bold';
+          }
+          if (price > 0) {
+            updateRealtimeChart(symbol, price);
+          }
         }
       } catch (err) {
-        alert(`[FETCH ERROR] 시세 연동 실패: ${err.message}`);
+        console.log(`Fetch Error (${symbol}):`, err);
       }
     }
 
-    function publishPost() {
-      const cat = document.getElementById('post-category').value.trim() || 'QUANT';
-      const author = currentUser ? currentUser.name : 'GUEST';
-      const title = document.getElementById('post-title').value.trim();
-      const content = document.getElementById('post-content').value.trim();
-
-      if (!title || !content || !window.dbPush || !window.postRef) return;
-      const dateStr = new Date().toLocaleDateString();
-
-      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
-      document.getElementById('post-title').value = '';
-      document.getElementById('post-content').value = '';
-      closePostModal();
+    /* 2. 호가 API (/api/v1/orderbook) 연동 */
+    async function fetchOrderbook() {
+      const symbol = document.getElementById('market-search-input').value.trim() || '005930';
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/orderbook/${symbol}`);
+        const data = await res.json();
+        alert(`[호가 정보 (Orderbook)]\n${JSON.stringify(data.result || data, null, 2)}`);
+      } catch (err) { alert(`호가 조회 실패: ${err.message}`); }
     }
 
-    function displayPostCard(cat, author, title, content, date) {
-      const grid = document.getElementById('post-grid');
-      const cardHtml = `
-        <article class="bb-box p-3 flex flex-col justify-between hover:border-bbAmber">
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="bg-bbAmber/20 text-bbAmber text-[9px] px-1.5 py-0.5 font-mono border border-bbAmber/40">${cat}</span>
-              <span class="text-gray-600 text-[10px] font-mono">${date}</span>
-            </div>
-            <h3 class="text-sm font-bold text-white mb-2 leading-snug font-sans">${title}</h3>
-            <p class="text-gray-400 text-xs leading-relaxed column-content mb-3 font-sans">${content}</p>
-          </div>
-          <div class="pt-2 border-t border-bbBorder text-[10px] text-gray-500 flex justify-between font-mono">
-            <span>USER: <strong class="text-bbAmber">${author}</strong></span>
-          </div>
-        </article>
-      `;
-      grid.insertAdjacentHTML('afterbegin', cardHtml);
+    /* 3. 투자자별 매매동향 API (/api/v1/stocks/{symbol}/investor-trading) 연동 */
+    async function fetchInvestorTrading() {
+      const symbol = document.getElementById('market-search-input').value.trim() || '005930';
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/investor-trading/${symbol}`);
+        const data = await res.json();
+        alert(`[투자자 매매동향]\n${JSON.stringify(data.result || data, null, 2)}`);
+      } catch (err) { alert(`매매동향 조회 실패: ${err.message}`); }
     }
 
-    function updateMainOverviewBriefing(cat, author, title, content, date) {
-      const container = document.getElementById('latest-briefing-card');
-      container.innerHTML = `
-        <div class="flex items-center justify-between text-[10px] font-mono mb-1">
-          <span class="bg-bbAmber/20 text-bbAmber px-1.5 py-0.5 border border-bbAmber/40 font-bold">[${cat}]</span>
-          <span class="text-gray-500">${date}</span>
-        </div>
-        <h3 class="text-sm font-bold text-white font-sans">${title}</h3>
-        <p class="text-xs text-gray-400 line-clamp-2 font-sans leading-relaxed">${content}</p>
-        <div class="pt-2 flex justify-between items-center text-[10px] font-mono border-t border-bbBorder/50">
-          <span class="text-gray-400">AUTHOR: <strong class="text-bbAmber">${author}</strong></span>
-          <button onclick="switchTab('column')" class="text-bbAmber hover:underline font-bold">&gt; READ FULL COLUMN</button>
-        </div>
-      `;
+    /* 4. 환율 API (/api/v1/exchange-rate) 연동 */
+    async function fetchExchangeRate() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/exchange-rate`);
+        const data = await res.json();
+        alert(`[실시간 KRW/USD 환율]\n${JSON.stringify(data.result || data, null, 2)}`);
+      } catch (err) { alert(`환율 조회 실패: ${err.message}`); }
     }
 
-    function pushMessageToCloud() {
-      const txtIn = document.getElementById('chat-txt');
-      const nickname = currentUser ? currentUser.name : 'GUEST';
-      if (!txtIn.value.trim() || !window.dbPush) return;
-      window.dbPush(window.chatRef, { nickname: nickname, message: txtIn.value.trim(), timestamp: new Date().toLocaleTimeString() });
-      txtIn.value = '';
+    /* 5. 주식 랭킹 API (/api/v1/rankings) 연동 */
+    async function fetchRankings() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/rankings`);
+        const data = await res.json();
+        alert(`[실시간 주식 랭킹]\n${JSON.stringify(data.result || data, null, 2)}`);
+      } catch (err) { alert(`랭킹 조회 실패: ${err.message}`); }
     }
 
-    function displayMessageNode(name, text, time) {
-      const chatWin = document.getElementById('chat-messages');
-      chatWin.insertAdjacentHTML('beforeend', `<div><span class="text-gray-500">[${time}]</span> <span class="text-bbAmber font-bold">&lt;${name}&gt;</span> <span class="text-gray-200">${text}</span></div>`);
-      chatWin.scrollTop = chatWin.scrollHeight;
+    /* 6. 종목 정보 API (/api/v1/stocks) 연동 */
+    async function searchStockSymbol() {
+      const query = document.getElementById('market-search-input').value.trim();
+      if (!query) return;
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/toss/stock/${query}`);
+        const data = await res.json();
+
+        if (data.result && data.result.length > 0) {
+          const item = data.result[0];
+          alert(`[종목 정보]\n종목명: ${item.name}\n코드: ${item.symbol}\n시장: ${item.market}\n통화: ${item.currency}`);
+        } else {
+          alert(`[NOT FOUND] 해당 종목(${query})을 찾을 수 없습니다.`);
+        }
+      } catch (err) { alert(`종목 조회 실패: ${err.message}`); }
     }
   </script>
 </body>
