@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>철마스트리트 (CHEOLMA STREET)</title>
   
-  <!-- CSS 스타일 강제 적용 (배경색 및 텍스트 기본값) -->
+  <!-- CSS 스타일 강제 적용 (배경색, 텍스트 기본값, 칼럼 줄바꿈 처리) -->
   <style>
     body {
       background-color: #090d16 !important;
@@ -20,6 +20,12 @@
     .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
     .chat-scroll::-webkit-scrollbar { width: 6px; }
     .chat-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    
+    /* 긴 칼럼 본문의 줄바꿈/띄어쓰기 보존 설정 */
+    .column-content {
+      white-space: pre-line;
+      word-break: break-word;
+    }
   </style>
 
   <!-- Tailwind CSS CDN -->
@@ -68,7 +74,7 @@
 </head>
 <body class="bg-darkBg text-gray-100 font-sans antialiased overflow-x-hidden">
 
-  <!-- 1. NAVIGATION BAR (모바일 반응형 햄버거 메뉴 추가) -->
+  <!-- 1. NAVIGATION BAR (모바일 반응형 햄버거 메뉴 포함) -->
   <nav class="fixed top-0 left-0 w-full z-50 bg-darkBg/90 backdrop-blur-md border-b border-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-2 sm:space-x-3">
@@ -114,7 +120,7 @@
     </div>
   </section>
 
-  <!-- 3. 운영진 프로필 -->
+  <!-- 3. 운영진 프로필 (복어왕, 아쿠마, 터틀맨) -->
   <section id="about" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
     <div class="text-center mb-12 sm:mb-16">
       <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">TEAM MEMBERS</h2>
@@ -167,37 +173,66 @@
     </div>
   </section>
 
-  <!-- 5. 투자 칼럼 & 게시판 (Firebase 실시간 글쓰기 기능 연동) -->
+  <!-- 5. 투자 칼럼 & 게시판 -->
   <section id="column" class="py-16 sm:py-24 px-4 sm:px-6 max-w-7xl mx-auto fade-in-section">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-12">
       <div>
         <h2 class="text-xs font-bold tracking-widest text-brandCyan uppercase mb-2">INSIGHTS</h2>
         <p class="text-2xl sm:text-3xl font-bold text-white">투자 칼럼 & 오피니언</p>
       </div>
-      <button onclick="openPostModal()" class="mt-4 sm:mt-0 bg-brandBlue hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors">
-        + 칼럼 글쓰기
+      <button onclick="openPostModal()" class="mt-4 sm:mt-0 bg-brandBlue hover:bg-blue-600 text-white font-bold px-5 py-2.5 rounded-lg text-xs sm:text-sm transition-colors flex items-center gap-1.5 shadow-lg shadow-blue-500/10">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        칼럼 작성하기
       </button>
     </div>
 
-    <!-- 실시간 글 등록 영역 -->
-    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- Firebase 수신 데이터가 여기에 등록됨 -->
+    <!-- 실시간 칼럼 그리드 -->
+    <div id="post-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Firebase 데이터가 여기에 동적으로 들어옵니다 -->
     </div>
   </section>
 
-  <!-- 글쓰기 모달 창 -->
-  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-cardBg border border-gray-800 w-full max-w-lg rounded-2xl p-6 relative">
-      <h3 class="text-lg font-bold text-white mb-4">새 칼럼/오피니언 작성</h3>
-      <div class="space-y-3">
-        <input type="text" id="post-category" placeholder="카테고리 (예: 시황 분석, 퀀트 연구)" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
-        <input type="text" id="post-author" placeholder="작성자 이름" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
-        <input type="text" id="post-title" placeholder="칼럼 제목" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-brandCyan">
-        <textarea id="post-content" rows="4" placeholder="칼럼 요약 내용 입력..." class="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-xs text-white outline-none focus:border-brandCyan resize-none"></textarea>
+  <!-- 확장형 대형 칼럼 작성 모달 창 -->
+  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-cardBg border border-gray-700 w-full max-w-3xl rounded-2xl p-5 sm:p-8 relative my-auto shadow-2xl">
+      <div class="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+        <div>
+          <h3 class="text-xl font-bold text-white">새 칼럼 / 오피니언 작성</h3>
+          <p class="text-xs text-gray-400 mt-1">깊이 있는 시황 분석 및 인사이트 글을 작성해 주세요.</p>
+        </div>
+        <button onclick="closePostModal()" class="text-gray-400 hover:text-white p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
       </div>
-      <div class="flex justify-end space-x-2 mt-6">
-        <button onclick="closePostModal()" class="bg-gray-800 text-gray-400 px-4 py-2 rounded-lg text-xs">취소</button>
-        <button onclick="publishPost()" class="bg-brandCyan text-darkBg font-bold px-4 py-2 rounded-lg text-xs">등록하기</button>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">카테고리</label>
+            <input type="text" id="post-category" placeholder="예: 시황 분석, 퀀트 연구, 미국 증시" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-brandCyan">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">작성자</label>
+            <input type="text" id="post-author" placeholder="작성자 이름" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-xs text-white outline-none focus:border-brandCyan">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">칼럼 제목</label>
+          <input type="text" id="post-title" placeholder="제목을 입력해 주세요" class="w-full bg-gray-900 border border-gray-800 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-white outline-none focus:border-brandCyan">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 mb-1">본문 내용 (엔터 줄바꿈 보존)</label>
+          <textarea id="post-content" rows="11" placeholder="자유롭게 본문을 작성하세요. 줄바꿈과 문단이 그대로 반영됩니다." class="w-full bg-gray-900 border border-gray-800 rounded-lg p-3.5 text-xs text-white outline-none focus:border-brandCyan resize-y leading-relaxed"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-800">
+        <button onclick="closePostModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold px-5 py-2.5 rounded-lg text-xs transition-colors">취소</button>
+        <button onclick="publishPost()" class="bg-brandCyan hover:bg-cyan-500 text-darkBg font-bold px-6 py-2.5 rounded-lg text-xs transition-colors shadow-lg shadow-cyan-500/20">
+          게시하기
+        </button>
       </div>
     </div>
   </div>
@@ -247,17 +282,14 @@
       sections.forEach(s => obs.observe(s));
       switchMarket('KR');
 
-      // Firebase 실시간 리스너 작동 (채팅 & 게시글)
       setTimeout(() => {
         if(window.onChildAdded) {
-          // 채팅 동기화
           if(window.chatRef) {
             window.onChildAdded(window.chatRef, (data) => {
               const msgObj = data.val();
               displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
             });
           }
-          // 게시글 동기화
           if(window.postRef) {
             window.onChildAdded(window.postRef, (data) => {
               const p = data.val();
@@ -268,9 +300,8 @@
       }, 1200);
     });
 
-    // 칼럼 등록 로직
     function publishPost() {
-      const cat = document.getElementById('post-category').value.trim() || '일반 칼럼';
+      const cat = document.getElementById('post-category').value.trim() || '시황 오피니언';
       const author = document.getElementById('post-author').value.trim() || '익명 칼럼니스트';
       const title = document.getElementById('post-title').value.trim();
       const content = document.getElementById('post-content').value.trim();
@@ -295,17 +326,17 @@
     function displayPostCard(cat, author, title, content, date) {
       const grid = document.getElementById('post-grid');
       const cardHtml = `
-        <article class="bg-cardBg border border-gray-800 rounded-2xl p-6 flex flex-col justify-between hover:border-gray-700 transition-all">
+        <article class="bg-cardBg border border-gray-800 rounded-2xl p-6 flex flex-col justify-between hover:border-gray-700 transition-all shadow-lg">
           <div>
             <div class="flex items-center justify-between mb-3">
               <span class="bg-brandCyan/10 text-brandCyan text-xs font-semibold px-2.5 py-1 rounded-full border border-brandCyan/20">${cat}</span>
               <span class="text-gray-500 text-xs">${date}</span>
             </div>
-            <h3 class="text-lg font-bold text-white mb-2 leading-snug">${title}</h3>
-            <p class="text-gray-400 text-sm leading-relaxed">${content}</p>
+            <h3 class="text-lg font-bold text-white mb-3 leading-snug">${title}</h3>
+            <p class="text-gray-300 text-xs leading-relaxed column-content mb-4">${content}</p>
           </div>
-          <div class="mt-6 pt-4 border-t border-gray-800/80 text-xs text-gray-500">
-            작성자: ${author}
+          <div class="mt-4 pt-4 border-t border-gray-800/80 text-xs text-gray-500 flex justify-between items-center">
+            <span>작성자: <strong class="text-gray-400">${author}</strong></span>
           </div>
         </article>
       `;
