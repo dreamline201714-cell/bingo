@@ -98,7 +98,6 @@
         &gt; RESTRICTED OPERATOR ACCESS // ENTER AUTHORIZATION CODE
       </div>
 
-      <!-- Auth Form Box -->
       <div class="bg-bbPanel border border-bbBorder p-4 rounded max-w-md mx-auto space-y-3">
         <input type="password" id="auth-code-input" placeholder="ACCESS CODE" 
                class="w-full bg-black border border-bbBorder px-3 py-2 text-center text-xs text-bbAmber outline-none focus:border-bbAmber font-mono"
@@ -117,7 +116,6 @@
       <div class="flex items-center space-x-3">
         <span class="bg-bbAmber text-black font-extrabold px-1.5 py-0.5 tracking-tighter">BLOOMBERG // CHEOLMA</span>
         <span id="user-badge" class="text-bbGreen font-bold tracking-widest">[SYS_OK: GUEST]</span>
-        <!-- 로그아웃/코드 재설정 버튼 -->
         <button onclick="logoutUser()" class="text-[9px] text-gray-500 hover:text-bbRed underline">[LOGOUT]</button>
       </div>
       <div class="flex items-center space-x-4 font-mono text-gray-400">
@@ -126,7 +124,6 @@
       </div>
     </div>
     
-    <!-- Realtime Ticker Bar (Includes CHEOLMA FUND) -->
     <div class="bg-bbPanel border border-bbBorder px-2 py-1 overflow-x-auto whitespace-nowrap text-[10px] text-gray-300 flex items-center space-x-6 font-mono">
       <div class="flex items-center space-x-2 bg-bbAmber/10 border border-bbAmber/30 px-2 py-0.5 rounded">
         <strong class="text-bbAmber">[CHEOLMA FUND]</strong>
@@ -178,7 +175,7 @@
       </div>
     </section>
 
-    <!-- 2. TEAM / MEMBERS TAB -->
+    <!-- 2. TEAM / MEMBERS TAB (이미지 오버레이 카드 적용) -->
     <section id="tab-team" class="tab-content h-full flex-col overflow-y-auto">
       <div class="bb-box h-full flex flex-col p-4">
         <div class="bb-box-header mb-4">
@@ -188,12 +185,12 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          <!-- MEMBER 01: 복어왕 (사진 없음 / 텍스트 플레이스홀더) -->
+          <!-- MEMBER 01: 복어왕 -->
           <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40 hover:border-bbAmber">
             <div>
               <div class="w-full h-48 mb-3 bg-black border border-bbBorder flex flex-col items-center justify-center relative font-mono text-gray-600">
                 <span class="text-bbAmber text-xs font-bold">&gt; NO_IMAGE_DATA</span>
-                <span class="text-[9px] text-gray-500">BOGEO_KING_AVATAR_PENDING</span>
+                <span class="text-[9px] text-gray-500">BOGEO_AVATAR_PENDING</span>
               </div>
               <div class="text-bbAmber font-bold text-base mb-0.5">[USER_01] 복어왕</div>
               <div class="text-[11px] text-bbGreen mb-2">&gt; ROLE: CHIEF EXEC / STRATEGIST</div>
@@ -205,12 +202,11 @@
             </div>
           </div>
 
-          <!-- MEMBER 02: 아쿠마 (첫 번째 모자 쓴 사진 반영) -->
+          <!-- MEMBER 02: 아쿠마 (첫 번째 모자 쓴 사진 image.png) -->
           <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40 hover:border-bbAmber">
             <div>
               <div class="w-full h-48 mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbBlue/10 z-10 pointer-events-none"></div>
-                <!-- 첫 번째 사진 반영 -->
                 <img src="image.png" alt="아쿠마" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
                 <div class="absolute bottom-1 right-1 bg-black/80 px-1 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">
@@ -220,7 +216,7 @@
 
               <div class="text-bbAmber font-bold text-base mb-0.5">[USER_02] 아쿠마</div>
               <div class="text-[11px] text-bbBlue mb-2">&gt; ROLE: QUANT ALGO ENGINEER</div>
-              <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩(HFT) 파이프라인 수식 알고리즘 모듈 연구 개발.</p>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩(HFT) 파이프라인 수식 알고리즘 모듈 구축.</p>
             </div>
             <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
               <span>STATUS: PROCESSING</span>
@@ -228,12 +224,11 @@
             </div>
           </div>
 
-          <!-- MEMBER 03: 터틀맨 (두 번째 선글라스 쓴 사진 반영) -->
+          <!-- MEMBER 03: 터틀맨 (두 번째 선글라스 쓴 사진 image_2.png) -->
           <div class="bb-box p-4 flex flex-col justify-between border-bbAmber/40 hover:border-bbAmber">
             <div>
               <div class="w-full h-48 mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbAmber/10 z-10 pointer-events-none"></div>
-                <!-- 두 번째 사진 반영 -->
                 <img src="image_2.png" alt="터틀맨" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
                 <div class="absolute bottom-1 right-1 bg-black/80 px-1 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">
@@ -243,7 +238,7 @@
 
               <div class="text-bbAmber font-bold text-base mb-0.5">[USER_03] 터틀맨</div>
               <div class="text-[11px] text-bbAmber mb-2">&gt; ROLE: INFRA & DATA PIPELINE</div>
-              <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 증시 데이터 수집 크롤러 모듈 및 커뮤니티 노드 관리.</p>
+              <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 데이터 수집 크롤러 모듈 및 커뮤니티 노드 관리.</p>
             </div>
             <div class="mt-4 pt-2 border-t border-bbBorder text-[10px] text-gray-500 font-mono flex justify-between">
               <span>STATUS: STANDBY</span>
@@ -276,7 +271,6 @@
         <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs font-mono bg-black">
           <div class="text-gray-600 text-[10px] border-b border-bbBorder pb-1">&gt; CONNECTED TO NETWORK SERVER NODE [ASIA-SE-1]</div>
         </div>
-        <!-- 토론방 입력 영역: 사용자 ID 자동 고정 (readonly) -->
         <div class="bg-bbPanel p-2 border-t border-bbBorder flex items-center space-x-2">
           <span class="text-bbAmber text-xs font-bold">&gt;_</span>
           <input type="text" id="chat-id" placeholder="ID" readonly class="w-24 bg-black/50 border border-bbBorder px-2 py-1 text-xs text-bbAmber outline-none opacity-80 cursor-not-allowed font-bold">
@@ -367,29 +361,24 @@
     let globalChartLabels = [];
     const BACKEND_URL = "https://cheolma-backend.onrender.com";
 
-    // 접속 인증 함수
     function authenticateUser(savedCode = null) {
       const input = savedCode || document.getElementById('auth-code-input').value.trim();
       
       if (AUTH_CODES[input]) {
         currentUser = AUTH_CODES[input];
         
-        // 브라우저 저장소(localStorage)에 고유 코드 저장
         localStorage.setItem("cheolma_auth_code", input);
         
-        // 사용자 세션 정보 및 UI 자동 세팅
         document.getElementById('user-badge').innerText = `[USER: ${currentUser.name} // ${currentUser.level}]`;
         document.getElementById('chat-id').value = currentUser.name;
         document.getElementById('post-author').value = currentUser.name;
         
-        // 복어왕 전용 펀드 수정 버튼
         if (currentUser.role === "ADMIN") {
           document.getElementById('admin-fund-btn').classList.remove('hidden');
         } else {
           document.getElementById('admin-fund-btn').classList.add('hidden');
         }
 
-        // 인트로 스크린 제거
         const intro = document.getElementById('intro-screen');
         intro.style.transition = 'opacity 0.5s ease';
         intro.style.opacity = '0';
@@ -401,7 +390,6 @@
       }
     }
 
-    // 로그아웃 (저장된 정보 삭제 후 새로고침)
     function logoutUser() {
       localStorage.removeItem("cheolma_auth_code");
       location.reload();
@@ -416,7 +404,6 @@
     function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
     function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
 
-    // Firebase 펀드 수치 반영
     function updateFundPortfolio() {
       if (!window.dbSet || !window.fundRef) return;
 
@@ -466,7 +453,6 @@
     setInterval(updateClock, 1000);
 
     document.addEventListener("DOMContentLoaded", () => {
-      // 자동 로그인 검수 (localStorage 기기 세션 확인)
       const savedCode = localStorage.getItem("cheolma_auth_code");
       if (savedCode) {
         authenticateUser(savedCode);
