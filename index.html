@@ -100,7 +100,7 @@
 
       <!-- Auth Form Box -->
       <div class="bg-bbPanel border border-bbBorder p-4 rounded max-w-md mx-auto space-y-3">
-        <input type="password" id="auth-code-input" placeholder="ACCESS CODE" 
+        <input type="password" id="auth-code-input" placeholder="ACCESS CODE (e.g. BOGEO-9912)" 
                class="w-full bg-black border border-bbBorder px-3 py-2 text-center text-xs text-bbAmber outline-none focus:border-bbAmber font-mono"
                onkeypress="if(event.key==='Enter') authenticateUser()">
         <button onclick="authenticateUser()" class="w-full bg-bbAmber text-black font-extrabold py-2 text-xs hover:bg-yellow-400">
@@ -117,6 +117,8 @@
       <div class="flex items-center space-x-3">
         <span class="bg-bbAmber text-black font-extrabold px-1.5 py-0.5 tracking-tighter">BLOOMBERG // CHEOLMA</span>
         <span id="user-badge" class="text-bbGreen font-bold tracking-widest">[SYS_OK: GUEST]</span>
+        <!-- 로그아웃/코드 재설정 버튼 -->
+        <button onclick="logoutUser()" class="text-[9px] text-gray-500 hover:text-bbRed underline">[LOGOUT]</button>
       </div>
       <div class="flex items-center space-x-4 font-mono text-gray-400">
         <span id="sys-clock" class="text-bbAmber font-bold">00:00:00 UTC</span>
@@ -130,7 +132,6 @@
         <strong class="text-bbAmber">[CHEOLMA FUND]</strong>
         <span id="fund-nav-text" class="text-white font-bold">$1,000,000</span>
         <span id="fund-ratio-text" class="text-bbGreen">+0.00%</span>
-        <!-- 복어왕 전용 펀드 관리 버튼 -->
         <button id="admin-fund-btn" onclick="openFundModal()" class="hidden bg-bbAmber text-black font-bold text-[9px] px-1.5 py-0.2 hover:bg-yellow-400">
           EDIT
         </button>
@@ -231,10 +232,11 @@
         <div id="chat-messages" class="flex-1 overflow-y-auto p-3 space-y-2 text-xs font-mono bg-black">
           <div class="text-gray-600 text-[10px] border-b border-bbBorder pb-1">&gt; CONNECTED TO NETWORK SERVER NODE [ASIA-SE-1]</div>
         </div>
+        <!-- 토론방 입력 영역: 사용자 ID 자동 고정 (readonly) -->
         <div class="bg-bbPanel p-2 border-t border-bbBorder flex items-center space-x-2">
           <span class="text-bbAmber text-xs font-bold">&gt;_</span>
-          <input type="text" id="chat-id" placeholder="ID" class="w-20 bg-black border border-bbBorder px-2 py-1 text-xs text-bbAmber outline-none">
-          <input type="text" id="chat-txt" placeholder="Input message..." class="flex-1 bg-black border border-bbBorder px-2 py-1 text-xs text-bbGreen outline-none" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
+          <input type="text" id="chat-id" placeholder="ID" readonly class="w-24 bg-black/50 border border-bbBorder px-2 py-1 text-xs text-bbAmber outline-none opacity-80 cursor-not-allowed font-bold">
+          <input type="text" id="chat-txt" placeholder="Input message..." class="flex-1 bg-black border border-bbBorder px-2 py-1 text-xs text-bbGreen outline-none focus:border-bbGreen" onkeypress="if(event.key==='Enter') pushMessageToCloud()">
           <button onclick="pushMessageToCloud()" class="bg-bbAmber text-black font-bold text-xs px-4 py-1 hover:bg-yellow-400">SEND</button>
         </div>
       </div>
@@ -248,6 +250,42 @@
     <button onclick="switchTab('column')" id="nav-column" class="py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F3</span><span>[COLUMN]</span></button>
     <button onclick="switchTab('chat')" id="nav-chat" class="py-3 text-gray-500 border-t-2 border-transparent hover:text-gray-300 flex flex-col items-center justify-center gap-0.5"><span class="text-[10px]">F4</span><span>[IRC_CHAT]</span></button>
   </nav>
+
+  <!-- WRITE COLUMN MODAL -->
+  <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-xl p-4 font-mono">
+      <div class="bb-box-header -m-4 mb-4">
+        <span>WRITE_RESEARCH_POST</span>
+        <button onclick="closePostModal()" class="text-bbRed font-bold">X</button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] text-gray-500 block mb-1">CATEGORY</label>
+            <input type="text" id="post-category" placeholder="QUANT / MACRO" class="w-full bg-black border border-bbBorder p-2 text-xs text-bbAmber outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-500 block mb-1">AUTHOR</label>
+            <input type="text" id="post-author" readonly class="w-full bg-black/50 border border-bbBorder p-2 text-xs text-bbAmber outline-none cursor-not-allowed font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 block mb-1">TITLE</label>
+          <input type="text" id="post-title" placeholder="ENTER SUBJECT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-white outline-none">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-500 block mb-1">CONTENT</label>
+          <textarea id="post-content" rows="6" placeholder="WRITE DETAILED REPORT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-gray-300 outline-none resize-none font-sans"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end space-x-2 mt-4">
+        <button onclick="closePostModal()" class="bg-gray-800 text-gray-400 text-xs px-3 py-1">CANCEL</button>
+        <button onclick="publishPost()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1 hover:bg-yellow-400">PUBLISH</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 복어왕 전용 펀드 구성요소 편집 모달 -->
   <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
@@ -274,11 +312,10 @@
 
   <!-- SCRIPT CONTROLLER -->
   <script>
-    // 복어왕 / 아쿠마 / 터틀맨 접근 고유 인증 코드
     const AUTH_CODES = {
-      "BOGEO-0624": { name: "복어왕", role: "ADMIN", level: "L5" },
-      "AKUMA-0709": { name: "아쿠마", role: "OPERATOR", level: "L4" },
-      "TURTLE-0605": { name: "터틀맨", role: "OPERATOR", level: "L4" }
+      "BOGEO-9912": { name: "복어왕", role: "ADMIN", level: "L5" },
+      "AKUMA-7741": { name: "아쿠마", role: "OPERATOR", level: "L4" },
+      "TURTLE-3301": { name: "터틀맨", role: "OPERATOR", level: "L4" }
     };
 
     let currentUser = null;
@@ -286,35 +323,56 @@
     let globalChartLabels = [];
     const BACKEND_URL = "https://cheolma-backend.onrender.com";
 
-    // 인증 함수
-    function authenticateUser() {
-      const input = document.getElementById('auth-code-input').value.trim();
+    // 접속 인증 함수
+    function authenticateUser(savedCode = null) {
+      const input = savedCode || document.getElementById('auth-code-input').value.trim();
+      
       if (AUTH_CODES[input]) {
         currentUser = AUTH_CODES[input];
         
-        // UI 반영
+        // 브라우저 저장소(localStorage)에 고유 코드 저장
+        localStorage.setItem("cheolma_auth_code", input);
+        
+        // 사용자 세션 정보 및 UI 자동 세팅
         document.getElementById('user-badge').innerText = `[USER: ${currentUser.name} // ${currentUser.level}]`;
         document.getElementById('chat-id').value = currentUser.name;
+        document.getElementById('post-author').value = currentUser.name;
         
-        // 복어왕일 경우 펀드 수정 버튼 활성화
+        // 복어왕 전용 펀드 수정 버튼
         if (currentUser.role === "ADMIN") {
           document.getElementById('admin-fund-btn').classList.remove('hidden');
+        } else {
+          document.getElementById('admin-fund-btn').classList.add('hidden');
         }
 
-        // 인트로 화면 닫기
+        // 인트로 스크린 제거
         const intro = document.getElementById('intro-screen');
         intro.style.transition = 'opacity 0.5s ease';
         intro.style.opacity = '0';
         setTimeout(() => intro.style.display = 'none', 500);
       } else {
-        document.getElementById('auth-error').classList.remove('hidden');
+        if (!savedCode) {
+          document.getElementById('auth-error').classList.remove('hidden');
+        }
       }
     }
+
+    // 로그아웃 (저장된 정보 삭제 후 새로고침)
+    function logoutUser() {
+      localStorage.removeItem("cheolma_auth_code");
+      location.reload();
+    }
+
+    function openPostModal() {
+      document.getElementById('post-author').value = currentUser ? currentUser.name : "GUEST";
+      document.getElementById('post-modal').classList.remove('hidden');
+    }
+    function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
 
     function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
     function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
 
-    // Firebase 펀드 구성요소 실시간 업데이트 및 수신
+    // Firebase 펀드 수치 반영
     function updateFundPortfolio() {
       if (!window.dbSet || !window.fundRef) return;
 
@@ -324,10 +382,7 @@
       const cash = parseFloat(document.getElementById('weight-cash').value) || 0;
 
       window.dbSet(window.fundRef, {
-        nvda: nvda,
-        btc: btc,
-        aapl: aapl,
-        cash: cash,
+        nvda: nvda, btc: btc, aapl: aapl, cash: cash,
         updatedBy: currentUser ? currentUser.name : "ADMIN",
         timestamp: new Date().toISOString()
       });
@@ -335,13 +390,11 @@
       closeFundModal();
     }
 
-    // Firebase DB 펀드 리스너 연결 (모든 사용자가 실시간 수신)
     function listenFundUpdates() {
       if (window.onValue && window.fundRef) {
         window.onValue(window.fundRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
-            // 비중에 따른 가상 NAV 계산 (기준 $1,000,000)
             const baseValue = 1000000;
             const simulatedGain = (data.nvda * 0.024) + (data.btc * 0.018) + (data.aapl * -0.008);
             const totalNav = baseValue * (1 + (simulatedGain / 100));
@@ -369,6 +422,12 @@
     setInterval(updateClock, 1000);
 
     document.addEventListener("DOMContentLoaded", () => {
+      // 자동 로그인 검수 (localStorage 기기 세션 확인)
+      const savedCode = localStorage.getItem("cheolma_auth_code");
+      if (savedCode) {
+        authenticateUser(savedCode);
+      }
+
       initParticleCanvas();
       loadUSMarketData();
 
@@ -378,6 +437,12 @@
           window.onChildAdded(window.chatRef, (data) => {
             const msgObj = data.val();
             displayMessageNode(msgObj.nickname, msgObj.message, msgObj.timestamp);
+          });
+        }
+        if(window.onChildAdded && window.postRef) {
+          window.onChildAdded(window.postRef, (data) => {
+            const p = data.val();
+            displayPostCard(p.category, p.author, p.title, p.content, p.date);
           });
         }
       }, 1200);
@@ -448,6 +513,41 @@
         data: { labels: labels, datasets: [{ data: chartData, borderColor: '#ff9900', borderWidth: 1.5, fill: false, pointRadius: 0 }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
+    }
+
+    function publishPost() {
+      const cat = document.getElementById('post-category').value.trim() || 'QUANT';
+      const author = currentUser ? currentUser.name : 'GUEST';
+      const title = document.getElementById('post-title').value.trim();
+      const content = document.getElementById('post-content').value.trim();
+
+      if (!title || !content || !window.dbPush || !window.postRef) return;
+      const dateStr = new Date().toLocaleDateString();
+
+      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-content').value = '';
+      closePostModal();
+    }
+
+    function displayPostCard(cat, author, title, content, date) {
+      const grid = document.getElementById('post-grid');
+      const cardHtml = `
+        <article class="bb-box p-3 flex flex-col justify-between hover:border-bbAmber">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="bg-bbAmber/20 text-bbAmber text-[9px] px-1.5 py-0.5 font-mono border border-bbAmber/40">${cat}</span>
+              <span class="text-gray-600 text-[10px] font-mono">${date}</span>
+            </div>
+            <h3 class="text-sm font-bold text-white mb-2 leading-snug font-sans">${title}</h3>
+            <p class="text-gray-400 text-xs leading-relaxed column-content mb-3 font-sans">${content}</p>
+          </div>
+          <div class="pt-2 border-t border-bbBorder text-[10px] text-gray-500 flex justify-between font-mono">
+            <span>USER: <strong class="text-bbAmber">${author}</strong></span>
+          </div>
+        </article>
+      `;
+      grid.insertAdjacentHTML('afterbegin', cardHtml);
     }
 
     function pushMessageToCloud() {
