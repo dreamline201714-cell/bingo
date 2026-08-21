@@ -810,32 +810,32 @@
 
     /* 토스증권 API 데이터 조회 및 차트 연동 */
     async function fetchStockPrice(symbol) {
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
-        const data = await res.json();
+	  try {
+		const res = await fetch(`${BACKEND_URL}/api/toss/stock/${symbol}`);
+		const data = await res.json();
 
-        if (data.result && data.result.length > 0) {
-          const item = data.result[0];
-          const name = item.name || symbol;
-          const market = item.market || 'LIVE';
-          
-          const priceElem = document.getElementById(`price-${symbol}`);
-          if (priceElem) {
-            priceElem.innerText = `${name} [${market}]`;
-            priceElem.className = 'text-bbGreen font-bold';
-          }
+		if (data.result && data.result.length > 0) {
+		  const item = data.result[0];
+		  const name = item.name || symbol;
+		  const market = item.market || 'LIVE';
+		  
+		  const priceElem = document.getElementById(`price-${symbol}`);
+		  if (priceElem) {
+			priceElem.innerText = `${name} [${market}]`;
+			priceElem.className = 'text-bbGreen font-bold';
+		  }
 
-          // 현재 시세 수신 시 X축 시간과 가격 데이터 동적 반영
-          const lastData = multiCharts[symbol].data.datasets[0].data;
-          const basePrice = lastData.length > 0 ? lastData[lastData.length - 1] : 100;
-          const randomPrice = basePrice + (Math.random() * 2 - 1);
+		  // 더미 시세 데이터 생성 및 차트 갱신
+		  const lastData = multiCharts[symbol].data.datasets[0].data;
+		  const basePrice = lastData.length > 0 ? lastData[lastData.length - 1] : 100;
+		  const randomPrice = basePrice + (Math.random() * 2 - 1);
 
-          updateRealtimeChart(symbol, parseFloat(randomPrice.toFixed(2)));
-        }
-      } catch (err) {
-        console.log(`Fetch Error (${symbol}):`, err);
-      }
-    }
+		  updateRealtimeChart(symbol, parseFloat(randomPrice.toFixed(2)));
+		}
+	  } catch (err) {
+		console.log(`Fetch Error (${symbol}):`, err);
+	  }
+	}
 
     /* 검색창 종목 검색 실행 */
     async function searchStockSymbol() {
