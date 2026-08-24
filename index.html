@@ -48,7 +48,6 @@
     .stock-item:hover { border-color: #ff9900; background-color: #1a1a1a; }
     .stock-item.active { border-color: #ff9900; background-color: #261d0f; }
 
-    /* 모바일 스크롤 지원 탭 스타일 */
     .nav-btn {
       background-color: #121212;
       border: 1px solid #333333;
@@ -74,7 +73,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, push, set, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, push, set, update, remove, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA3YXZ_53BQ8UmKXa397XGOWO0v1DfnR8U",
@@ -95,6 +94,9 @@
     window.logsRef = ref(db, "fund_logs");
     window.dbPush = push;
     window.dbSet = set;
+    window.dbUpdate = update;
+    window.dbRemove = remove;
+    window.getPostRefById = (id) => ref(db, `posts/${id}`);
     window.onChildAdded = onChildAdded;
     window.onValue = onValue;
   </script>
@@ -106,7 +108,6 @@
   <!-- INTRO LANDING & AUTH SCREEN -->
   <div id="intro-screen" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4 select-none">
     <canvas id="intro-canvas" class="absolute inset-0 z-0"></canvas>
-    
     <div class="z-10 text-center max-w-4xl space-y-6">
       <pre class="text-bbAmber font-mono text-[8px] sm:text-[11px] md:text-[13px] leading-tight font-bold whitespace-pre overflow-x-auto">
   ██████╗██╗  ██╗███████╗██████╗ ██╗     ███╗   ███╗███████╗████████╗██████╗ ███████╗███████╗████████╗
@@ -162,7 +163,6 @@
       <span><strong class="text-bbAmber">MSFT</strong> 448.90 <span class="text-bbGreen">+1.1%</span></span>
     </div>
 
-    <!-- 모바일 스크롤 완벽 대응 상단 탭 -->
     <nav class="bg-black flex overflow-x-auto gap-1 text-center mt-1 font-mono text-xs px-1 no-scrollbar">
       <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn active flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F1</span><span>[OVERVIEW]</span></button>
       <button onclick="switchTab('market')" id="nav-market" class="nav-btn flex-1 py-1.5 rounded-t flex justify-center items-center gap-1"><span class="text-[9px] opacity-70">F2</span><span>[MARKET]</span></button>
@@ -178,7 +178,6 @@
     <!-- 1. OVERVIEW TAB -->
     <section id="tab-overview" class="tab-content active h-full flex-col overflow-y-auto">
       <div class="w-full max-w-7xl mx-auto flex flex-col gap-3 p-1">
-        
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 shrink-0">
           <div class="lg:col-span-2 bb-box p-3 flex flex-col justify-between">
             <div class="bb-box-header -m-3 mb-2">
@@ -251,7 +250,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
@@ -271,7 +269,6 @@
         <div class="bb-box h-[280px] lg:h-full flex flex-col">
           <div class="bb-box-header">
             <span id="chart-title">NASDAQ COMPOSITE 1D MONITOR</span>
-            <!-- 전일 마감 종목 표기 레이블 강화 -->
             <span class="text-bbAmber">PREV_CLOSE (CLOSED) // 15m TICK</span>
           </div>
           <div class="flex-1 p-2 relative">
@@ -297,18 +294,15 @@
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-6xl mx-auto w-full py-2">
-          <!-- MEMBER 01: 복어왕 -->
+          <!-- MEMBER 01 -->
           <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbGreen/10 z-10 pointer-events-none"></div>
                 <img src="https://cheolma-backend.onrender.com/images/BOGEO.PNG" alt="복어왕" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbGreen font-mono z-20 border border-bbBorder">
-                  IMG_ID: BOGEO_01
-                </div>
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbGreen font-mono z-20 border border-bbBorder">IMG_ID: BOGEO_01</div>
               </div>
-
               <div class="text-bbAmber font-bold text-base mb-1">[USER_01] 복어왕</div>
               <div class="text-xs text-bbGreen mb-2">&gt; ROLE: CHIEF EXEC / STRATEGIST</div>
               <p class="text-xs text-gray-400 leading-relaxed font-sans">철마스트리트 총괄 리더십. 펀드 포트폴리오 제어 및 매크로 지표 제어 권한 보유.</p>
@@ -319,18 +313,15 @@
             </div>
           </div>
 
-          <!-- MEMBER 02: 아쿠마 -->
+          <!-- MEMBER 02 -->
           <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbBlue/10 z-10 pointer-events-none"></div>
                 <img src="https://cheolma-backend.onrender.com/images/AKUMA.PNG" alt="아쿠마" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">
-                  IMG_ID: AKUMA_02
-                </div>
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbBlue font-mono z-20 border border-bbBorder">IMG_ID: AKUMA_02</div>
               </div>
-
               <div class="text-bbAmber font-bold text-base mb-1">[USER_02] 아쿠마</div>
               <div class="text-xs text-bbBlue mb-2">&gt; ROLE: QUANT ALGO ENGINEER</div>
               <p class="text-xs text-gray-400 leading-relaxed font-sans">퀀트 분석 및 고주파 트레이딩(HFT) 파이프라인 수식 알고리즘 모듈 구축.</p>
@@ -341,18 +332,15 @@
             </div>
           </div>
 
-          <!-- MEMBER 03: 터틀맨 -->
+          <!-- MEMBER 03 -->
           <div class="bb-box p-4 flex flex-col justify-between hover:border-bbAmber transition-all">
             <div>
               <div class="w-full aspect-[4/3] sm:aspect-square mb-3 bg-black border border-bbBorder overflow-hidden relative group">
                 <div class="absolute inset-0 bg-bbAmber/10 z-10 pointer-events-none"></div>
                 <img src="https://cheolma-backend.onrender.com/images/TURTLE.png" alt="터틀맨" 
                      class="w-full h-full object-cover object-top filter grayscale contrast-125 brightness-90 sepia-[.8] hue-rotate-[-15deg] group-hover:filter-none transition-all duration-300">
-                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">
-                  IMG_ID: TURTLE_03
-                </div>
+                <div class="absolute bottom-1.5 right-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] text-bbAmber font-mono z-20 border border-bbBorder">IMG_ID: TURTLE_03</div>
               </div>
-
               <div class="text-bbAmber font-bold text-base mb-1">[USER_03] 터틀맨</div>
               <div class="text-xs text-bbAmber mb-2">&gt; ROLE: INFRA & DATA PIPELINE</div>
               <p class="text-xs text-gray-400 leading-relaxed font-sans">실시간 데이터 수집 크롤러 모듈 및 커뮤니티 노드 관리.</p>
@@ -397,13 +385,15 @@
     </section>
   </main>
 
-  <!-- WRITE COLUMN MODAL -->
+  <!-- WRITE/EDIT COLUMN MODAL -->
   <div id="post-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bb-box w-full max-w-xl p-4 font-mono">
       <div class="bb-box-header -m-4 mb-4">
-        <span>WRITE_RESEARCH_POST</span>
+        <span id="post-modal-title">WRITE_RESEARCH_POST</span>
         <button onclick="closePostModal()" class="text-bbRed font-bold">X</button>
       </div>
+
+      <input type="hidden" id="edit-post-id" value="">
 
       <div class="space-y-3">
         <div class="grid grid-cols-2 gap-2">
@@ -422,7 +412,7 @@
         </div>
         <div>
           <label class="text-[10px] text-gray-500 block mb-1">CONTENT</label>
-          <textarea id="post-content" rows="6" placeholder="WRITE DETAILED REPORT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-gray-300 outline-none resize-none font-sans"></textarea>
+          <textarea id="post-content" rows="8" placeholder="WRITE DETAILED REPORT..." class="w-full bg-black border border-bbBorder p-2 text-xs text-gray-300 outline-none resize-none font-sans leading-relaxed"></textarea>
         </div>
       </div>
 
@@ -433,7 +423,30 @@
     </div>
   </div>
 
-  <!-- 복어왕 전용 펀드 구성요소 편집 모달 -->
+  <!-- READ COLUMN MODAL (개별 보기 모달) -->
+  <div id="read-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bb-box w-full max-w-2xl max-h-[85vh] p-4 font-mono flex flex-col">
+      <div class="bb-box-header -m-4 mb-4 shrink-0">
+        <span id="read-category" class="bg-bbAmber/20 text-bbAmber text-[10px] px-1.5 py-0.5 border border-bbAmber/40">CATEGORY</span>
+        <button onclick="closeReadModal()" class="text-bbRed font-bold">X</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 space-y-3 pr-1">
+        <h2 id="read-title" class="text-lg font-bold text-white font-sans leading-snug"></h2>
+        <div class="flex justify-between text-[11px] text-gray-500 border-b border-bbBorder pb-2">
+          <span>AUTHOR: <strong id="read-author" class="text-bbAmber"></strong></span>
+          <span id="read-date"></span>
+        </div>
+        <div id="read-content" class="text-sm text-gray-300 font-sans leading-relaxed whitespace-pre-wrap pt-2"></div>
+      </div>
+
+      <div class="flex justify-end mt-4 shrink-0 pt-2 border-t border-bbBorder">
+        <button onclick="closeReadModal()" class="bg-bbAmber text-black text-xs font-bold px-4 py-1">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 펀드 구성요소 편집 모달 -->
   <div id="fund-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bb-box w-full max-w-md p-4 font-mono">
       <div class="bb-box-header -m-4 mb-4">
@@ -468,11 +481,11 @@
     let overviewChart = null;
     let currentChart = null;
     let globalChartLabels = [];
+    let postsData = {};
     const BACKEND_URL = "https://cheolma-backend.onrender.com";
 
     function authenticateUser(savedCode = null) {
       const input = savedCode || document.getElementById('auth-code-input').value.trim();
-      
       if (AUTH_CODES[input]) {
         currentUser = AUTH_CODES[input];
         localStorage.setItem("cheolma_auth_code", input);
@@ -491,6 +504,8 @@
         intro.style.transition = 'opacity 0.5s ease';
         intro.style.opacity = '0';
         setTimeout(() => intro.style.display = 'none', 500);
+
+        renderAllPosts();
       } else {
         if (!savedCode) {
           document.getElementById('auth-error').classList.remove('hidden');
@@ -503,11 +518,38 @@
       location.reload();
     }
 
-    function openPostModal() {
-      document.getElementById('post-author').value = currentUser ? currentUser.name : "GUEST";
+    function openPostModal(editId = null) {
+      if (editId && postsData[editId]) {
+        const p = postsData[editId];
+        document.getElementById('post-modal-title').innerText = 'EDIT_RESEARCH_POST';
+        document.getElementById('edit-post-id').value = editId;
+        document.getElementById('post-category').value = p.category;
+        document.getElementById('post-author').value = p.author;
+        document.getElementById('post-title').value = p.title;
+        document.getElementById('post-content').value = p.content;
+      } else {
+        document.getElementById('post-modal-title').innerText = 'WRITE_RESEARCH_POST';
+        document.getElementById('edit-post-id').value = '';
+        document.getElementById('post-category').value = '';
+        document.getElementById('post-author').value = currentUser ? currentUser.name : "GUEST";
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-content').value = '';
+      }
       document.getElementById('post-modal').classList.remove('hidden');
     }
     function closePostModal() { document.getElementById('post-modal').classList.add('hidden'); }
+
+    function openReadModal(id) {
+      const p = postsData[id];
+      if (!p) return;
+      document.getElementById('read-category').innerText = p.category;
+      document.getElementById('read-title').innerText = p.title;
+      document.getElementById('read-author').innerText = p.author;
+      document.getElementById('read-date').innerText = p.date;
+      document.getElementById('read-content').innerText = p.content;
+      document.getElementById('read-modal').classList.remove('hidden');
+    }
+    function closeReadModal() { document.getElementById('read-modal').classList.add('hidden'); }
 
     function openFundModal() { document.getElementById('fund-modal').classList.remove('hidden'); }
     function closeFundModal() { document.getElementById('fund-modal').classList.add('hidden'); }
@@ -606,11 +648,10 @@
           });
         }
         
-        if(window.onChildAdded && window.postRef) {
-          window.onChildAdded(window.postRef, (data) => {
-            const p = data.val();
-            displayPostCard(p.category, p.author, p.title, p.content, p.date);
-            updateMainOverviewBriefing(p.category, p.author, p.title, p.content, p.date);
+        if(window.onValue && window.postRef) {
+          window.onValue(window.postRef, (snapshot) => {
+            postsData = snapshot.val() || {};
+            renderAllPosts();
           });
         }
 
@@ -737,52 +778,93 @@
     }
 
     function publishPost() {
+      const editId = document.getElementById('edit-post-id').value;
       const cat = document.getElementById('post-category').value.trim() || 'QUANT';
       const author = currentUser ? currentUser.name : 'GUEST';
       const title = document.getElementById('post-title').value.trim();
       const content = document.getElementById('post-content').value.trim();
 
-      if (!title || !content || !window.dbPush || !window.postRef) return;
+      if (!title || !content) return;
       const dateStr = new Date().toLocaleDateString();
 
-      window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
-      document.getElementById('post-title').value = '';
-      document.getElementById('post-content').value = '';
+      if (editId) {
+        // 수정
+        const targetRef = window.getPostRefById(editId);
+        window.dbUpdate(targetRef, { category: cat, title: title, content: content });
+      } else {
+        // 등록
+        if (!window.dbPush || !window.postRef) return;
+        window.dbPush(window.postRef, { category: cat, author: author, title: title, content: content, date: dateStr });
+      }
+
       closePostModal();
     }
 
-    function displayPostCard(cat, author, title, content, date) {
-      const grid = document.getElementById('post-grid');
-      const cardHtml = `
-        <article class="bb-box p-3 flex flex-col justify-between hover:border-bbAmber">
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="bg-bbAmber/20 text-bbAmber text-[9px] px-1.5 py-0.5 font-mono border border-bbAmber/40">${cat}</span>
-              <span class="text-gray-600 text-[10px] font-mono">${date}</span>
-            </div>
-            <h3 class="text-sm font-bold text-white mb-2 leading-snug font-sans">${title}</h3>
-            <p class="text-gray-400 text-xs leading-relaxed column-content mb-3 font-sans">${content}</p>
-          </div>
-          <div class="pt-2 border-t border-bbBorder text-[10px] text-gray-500 flex justify-between font-mono">
-            <span>USER: <strong class="text-bbAmber">${author}</strong></span>
-          </div>
-        </article>
-      `;
-      grid.insertAdjacentHTML('afterbegin', cardHtml);
+    function deletePost(id, event) {
+      if (event) event.stopPropagation();
+      if (confirm("이 컬럼을 삭제하시겠습니까?")) {
+        const targetRef = window.getPostRefById(id);
+        window.dbRemove(targetRef);
+      }
     }
 
-    function updateMainOverviewBriefing(cat, author, title, content, date) {
+    function renderAllPosts() {
+      const grid = document.getElementById('post-grid');
+      grid.innerHTML = '';
+      
+      const keys = Object.keys(postsData).reverse();
+      
+      if (keys.length > 0) {
+        const latestKey = keys[0];
+        const latestPost = postsData[latestKey];
+        updateMainOverviewBriefing(latestPost.category, latestPost.author, latestPost.title, latestPost.content, latestPost.date, latestKey);
+      }
+
+      keys.forEach(id => {
+        const p = postsData[id];
+        const isAuthorOrAdmin = currentUser && (currentUser.name === p.author || currentUser.role === 'ADMIN');
+        
+        const actionBtns = isAuthorOrAdmin ? `
+          <div class="flex space-x-2" onclick="event.stopPropagation()">
+            <button onclick="openPostModal('${id}')" class="text-bbAmber hover:underline text-[10px] font-mono">[EDIT]</button>
+            <button onclick="deletePost('${id}', event)" class="text-bbRed hover:underline text-[10px] font-mono">[DEL]</button>
+          </div>
+        ` : '';
+
+        const cardHtml = `
+          <article onclick="openReadModal('${id}')" class="bb-box p-3 flex flex-col justify-between hover:border-bbAmber cursor-pointer transition-colors">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="bg-bbAmber/20 text-bbAmber text-[9px] px-1.5 py-0.5 font-mono border border-bbAmber/40">${p.category}</span>
+                <span class="text-gray-600 text-[10px] font-mono">${p.date}</span>
+              </div>
+              <!-- 제목: 최대 2줄 전체 노출 -->
+              <h3 class="text-sm font-bold text-white mb-2 leading-snug font-sans line-clamp-2">${p.title}</h3>
+              <!-- 본문: 줄바꿈 유지 및 4줄 미리보기 -->
+              <p class="text-gray-400 text-xs leading-relaxed font-sans line-clamp-4 whitespace-pre-wrap mb-3">${p.content}</p>
+            </div>
+            <div class="pt-2 border-t border-bbBorder text-[10px] text-gray-500 flex justify-between font-mono items-center">
+              <span>USER: <strong class="text-bbAmber">${p.author}</strong></span>
+              ${actionBtns}
+            </div>
+          </article>
+        `;
+        grid.insertAdjacentHTML('beforeend', cardHtml);
+      });
+    }
+
+    function updateMainOverviewBriefing(cat, author, title, content, date, id) {
       const container = document.getElementById('latest-briefing-card');
       container.innerHTML = `
         <div class="flex items-center justify-between text-[10px] font-mono mb-1">
           <span class="bg-bbAmber/20 text-bbAmber px-1.5 py-0.5 border border-bbAmber/40 font-bold">[${cat}]</span>
           <span class="text-gray-500">${date}</span>
         </div>
-        <h3 class="text-sm font-bold text-white font-sans">${title}</h3>
-        <p class="text-xs text-gray-400 line-clamp-2 font-sans leading-relaxed">${content}</p>
+        <h3 class="text-sm font-bold text-white font-sans line-clamp-2">${title}</h3>
+        <p class="text-xs text-gray-400 line-clamp-2 font-sans leading-relaxed whitespace-pre-wrap">${content}</p>
         <div class="pt-2 flex justify-between items-center text-[10px] font-mono border-t border-bbBorder/50">
           <span class="text-gray-400">AUTHOR: <strong class="text-bbAmber">${author}</strong></span>
-          <button onclick="switchTab('column')" class="text-bbAmber hover:underline font-bold">&gt; READ FULL COLUMN</button>
+          <button onclick="switchTab('column'); openReadModal('${id}');" class="text-bbAmber hover:underline font-bold">&gt; READ FULL COLUMN</button>
         </div>
       `;
     }
